@@ -1,0 +1,29 @@
+# Пример конфигурации Nginx на VPS.
+# Разместить в /etc/nginx/sites-available/hd_realty и сделать symlink в sites-enabled.
+
+upstream hd_realty {
+    server 127.0.0.1:8000;
+}
+
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+
+    client_max_body_size 20M;
+
+    location /static/ {
+        alias /opt/hd_realty/staticfiles/;
+    }
+
+    location /media/ {
+        alias /opt/hd_realty/media/;
+    }
+
+    location / {
+        proxy_pass http://hd_realty;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

@@ -1,0 +1,47 @@
+# Production на VPS. Nginx — на хосте, проксирует на порт 8000.
+# Запуск: docker compose -f docker-compose.production.yml up -d
+
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    environment:
+      - PYTHONPATH=/app
+      - DJANGO_SETTINGS_MODULE=core.settings.production
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py update_translation_fields 2>/dev/null || true &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 core.wsgi:application"
+    expose:
+      - "8000"
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - ./media:/app/media
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hd_realty}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    expose:
+      - "5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

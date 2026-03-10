@@ -11,5 +11,7 @@ dist/
 build/
 *.log
 db.sqlite3
+staticfiles/
+media/
 .DS_Store
 .vscode/

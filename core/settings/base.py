@@ -95,8 +95,12 @@ LOCALE_PATHS = [ROOT_DIR / "locale"]
 MODELTRANSLATION_DEFAULT_LANGUAGE = "ru"
 
 # Static files
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = ROOT_DIR / "staticfiles"
+
+# Media files (uploads)
+MEDIA_URL = "/media/"
+MEDIA_ROOT = ROOT_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-not-for-production")
