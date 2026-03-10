@@ -1,0 +1,15 @@
+"""
+Django models - persistence layer.
+Сюда добавляются модели для новых сущностей.
+"""
+from django.db import models
+
+
+class TimeStampedModel(models.Model):
+    """Base model with timestamps."""
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
