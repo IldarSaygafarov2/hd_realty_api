@@ -17,6 +17,11 @@ cp .env.production.dist .env
 nano .env  # Заполнить SECRET_KEY, ALLOWED_HOSTS, DB_PASSWORD
 ```
 
+**Несколько проектов на одном сервере.** Если уже запущен другой проект в Docker, задайте в `.env`:
+- `COMPOSE_PROJECT_NAME=hd_realty` (уникальное имя)
+- `WEB_PORT=8001` (если 8000 занят)
+- `DB_PORT=5433` (если 5432 занят, только для dev)
+
 ## 3. Запуск приложения
 
 ```bash

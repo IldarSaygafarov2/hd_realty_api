@@ -1,4 +1,5 @@
-# Production на VPS. Nginx — на хосте, проксирует на порт 8000.
+# Production на VPS. Nginx — на хосте, проксирует на порт.
+# Порты через .env: WEB_PORT, DB_PORT. COMPOSE_PROJECT_NAME — для изоляции от других проектов.
 # Запуск: docker compose -f docker-compose.production.yml up -d
 
 services:
@@ -16,7 +17,7 @@ services:
     expose:
       - "8000"
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
     env_file:
       - .env
     depends_on:
