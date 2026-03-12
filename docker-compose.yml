@@ -1,7 +1,5 @@
-# Имя проекта и порты — задаются в .env для избежания конфликтов с другими проектами
-# COMPOSE_PROJECT_NAME=hd_realty
-# WEB_PORT=8000
-# DB_PORT=5432
+# Порты — в .env. DB_HOST_PORT — проброс PostgreSQL на хост (если 5432 занят).
+# Внутри Docker БД всегда на порту 5432; Django подключается к db:5432.
 
 services:
   web:
@@ -33,7 +31,7 @@ services:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${DB_HOST_PORT:-5432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
