@@ -64,7 +64,6 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
     )
     list_filter = ("status", "moderation_status", "category", "district")
     search_fields = ("title", "address")
-    prepopulated_fields = {"slug": ("title_ru",)}
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]
     readonly_fields = ("views_count", "created_at", "updated_at")
 
@@ -104,16 +103,15 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         (
             "Служебное",
             {
-                "fields": ("slug", "views_count", "created_at", "updated_at"),
+                "fields": ("views_count", "created_at", "updated_at"),
                 "classes": ("collapse",),
             },
         ),
     )
 
     def get_prepopulated_fields(self, request, obj=None):
-        if is_moderator(request.user) and not request.user.is_superuser:
-            return {}
-        return super().get_prepopulated_fields(request, obj)
+        # slug отсутствует в форме TranslationAdmin — отключаем prepopulate
+        return {}
 
     def get_fieldsets(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
@@ -278,7 +276,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         return exclude
 
     def get_readonly_fields(self, request, obj=None):
-        fields = ["views_count", "slug"]
+        fields = ["views_count"]
         if obj:
             fields.extend(["created_at", "updated_at"])
         if is_realtor(request.user) and not request.user.is_superuser:
