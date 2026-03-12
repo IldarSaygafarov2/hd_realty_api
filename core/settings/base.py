@@ -13,6 +13,7 @@ env.read_env(ROOT_DIR / ".env")
 
 # Application definition
 INSTALLED_APPS = [
+    "corsheaders",
     "modeltranslation",
     "unfold",
     "unfold.contrib.filters",
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -106,6 +108,19 @@ MEDIA_ROOT = ROOT_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-not-for-production")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@hdrealty.local")
+
+# CSRF: доверенные origins для прокси (nginx)
+CSRF_TRUSTED_ORIGINS = env.list(
+    "CSRF_TRUSTED_ORIGINS",
+    default=["http://localhost:8000", "http://127.0.0.1:8000"],
+)
+
+# CORS: для фронтенда на другом домене/порту
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=["http://localhost:3000", "http://127.0.0.1:3000"],
+)
+CORS_ALLOW_CREDENTIALS = True
 
 # Django Unfold
 from django.templatetags.static import static
