@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "project.apps.categories.apps.CategoriesConfig",
     "project.apps.districts.apps.DistrictsConfig",
     "project.apps.advertisements.apps.AdvertisementsConfig",
+    "project.apps.users.apps.UsersConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -104,8 +105,14 @@ MEDIA_ROOT = ROOT_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-not-for-production")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@hdrealty.local")
 
 # Django Unfold
+from django.templatetags.static import static
+
 UNFOLD = {
     "SHOW_LANGUAGES": True,
+    "SCRIPTS": [
+        lambda request: static("users/js/notifications-poller.js"),
+    ],
 }

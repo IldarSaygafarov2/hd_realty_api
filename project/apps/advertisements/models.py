@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 
 from project.infrastructure.models import TimeStampedModel
@@ -15,6 +16,11 @@ class Advertisement(TimeStampedModel):
         SOLD = 3, "Продано"
         ARCHIVED = 4, "В архиве"
 
+    class ModerationStatus(models.IntegerChoices):
+        PENDING = 0, "Ожидает модерации"
+        APPROVED = 1, "Одобрено"
+        REJECTED = 2, "Отклонено"
+
     class RenovationType(models.TextChoices):
         RENOVATION = "renovation", "Ремонт"
         PRE_FINISHED = "pre_finished", "Предчистовая"
@@ -27,10 +33,21 @@ class Advertisement(TimeStampedModel):
 
     # Основное
     title = models.CharField("Название", max_length=255)
+    cover_image = models.ImageField(
+        "Фото заставки", upload_to="advertisements/covers/%Y/%m/", blank=True
+    )
+    video = models.FileField(
+        "Видео", upload_to="advertisements/videos/%Y/%m/", blank=True
+    )
     slug = models.SlugField("Slug", max_length=255, unique=True, db_index=True)
     description = models.TextField("Описание", blank=True)
     status = models.PositiveSmallIntegerField(
         "Статус", choices=Status.choices, default=Status.DRAFT
+    )
+    moderation_status = models.PositiveSmallIntegerField(
+        "Модерация",
+        choices=ModerationStatus.choices,
+        default=ModerationStatus.PENDING,
     )
 
     # Цена
@@ -93,6 +110,14 @@ class Advertisement(TimeStampedModel):
     )
 
     # Служебное
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="advertisements",
+        verbose_name="Создал",
+    )
     views_count = models.PositiveIntegerField("Просмотры", default=0)
 
     class Meta:

@@ -6,11 +6,15 @@ from django.urls import include, path
 from ninja import NinjaAPI
 
 from project.api.router import router as common_router
+from project.api.admin.router import router as admin_router
+from project.api.advertisements.router import router as advertisements_router
 from project.api.categories.router import router as categories_router
 from project.api.districts.router import router as districts_router
 
 api = NinjaAPI(title="HD Realty API", version="1.0.0")
 api.add_router("/", common_router)
+api.add_router("/", admin_router)
+api.add_router("/", advertisements_router)
 api.add_router("/", categories_router)
 api.add_router("/", districts_router)
 
