@@ -1,5 +1,5 @@
-# Production на VPS. Nginx — на хосте, проксирует на порт.
-# Порты через .env: WEB_PORT, DB_PORT. COMPOSE_PROJECT_NAME — для изоляции от других проектов.
+# Production. Nginx в Docker — проксирует на web.
+# Порты в .env: NGINX_HTTP_PORT (если 80 занят другим проектом → 8080).
 # Запуск: docker compose -f docker-compose.production.yml up -d
 
 services:
@@ -16,16 +16,26 @@ services:
              gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 core.wsgi:application"
     expose:
       - "8000"
-    ports:
-      - "127.0.0.1:${WEB_PORT:-8000}:8000"
     env_file:
       - .env
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./staticfiles:/app/staticfiles
-      - ./media:/app/media
+      - staticfiles:/app/staticfiles
+      - media:/app/media
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${NGINX_HTTP_PORT:-8080}:80"
+    volumes:
+      - ./deploy/nginx-docker.conf:/etc/nginx/conf.d/default.conf:ro
+      - staticfiles:/app/staticfiles:ro
+      - media:/app/media:ro
+    depends_on:
+      - web
 
   db:
     image: postgres:16-alpine
@@ -46,3 +56,5 @@ services:
 
 volumes:
   postgres_data:
+  staticfiles:
+  media:

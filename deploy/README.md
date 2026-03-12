@@ -1,44 +1,34 @@
-# Деплой на VPS
+# Деплой на VPS (Docker, nginx в контейнере)
 
-## 1. Подготовка сервера
+## 1. Подготовка
 
 ```bash
-# Установить Docker и Docker Compose
-# Клонировать проект в /opt/hd_realty
 cd /opt
 git clone <repo> hd_realty
 cd hd_realty
 ```
 
-## 2. Настройка окружения
+## 2. Настройка .env
 
 ```bash
 cp .env.production.dist .env
-nano .env  # Заполнить SECRET_KEY, ALLOWED_HOSTS, DB_PASSWORD
+nano .env  # SECRET_KEY, ALLOWED_HOSTS, DB_PASSWORD
 ```
 
-**Несколько проектов на одном сервере.** Если порты заняты, задайте в `.env`:
-- `COMPOSE_PROJECT_NAME=hd_realty` (уникальное имя)
-- `WEB_PORT=8001` (если 8000 занят)
-- `DB_HOST_PORT=5433` (если 5432 занят; `DB_PORT` оставить 5432 — это порт внутри Docker)
+**Если на сервере уже запущен другой проект (nginx на 80):**
+- `NGINX_HTTP_PORT=8080` — приложение будет на порту 8080
+- `COMPOSE_PROJECT_NAME=hd_realty` — уникальное имя проекта
 
-## 3. Запуск приложения
+## 3. Запуск
 
 ```bash
 docker compose -f docker-compose.production.yml build
 docker compose -f docker-compose.production.yml up -d
 ```
 
-## 4. Nginx на хосте
+Приложение: `http://IP_сервера:8080` (или порт из NGINX_HTTP_PORT). В ALLOWED_HOSTS добавить IP и домен.
 
-Скопировать `deploy/nginx.conf.example` в `/etc/nginx/sites-available/hd_realty`, подставить свой домен, путь к проекту (например `/opt/hd_realty`).
-
-```bash
-sudo ln -s /etc/nginx/sites-available/hd_realty /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
-```
-
-## 5. Создание администратора
+## 4. Администратор
 
 ```bash
 docker compose -f docker-compose.production.yml exec web python manage.py createsuperuser
