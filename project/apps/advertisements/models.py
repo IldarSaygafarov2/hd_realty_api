@@ -32,6 +32,11 @@ class Advertisement(TimeStampedModel):
         UZS = "UZS", "сум"
 
     # Основное
+    is_hot = models.BooleanField(
+        "Горячее объявление",
+        default=False,
+        help_text="Горячее объявление?",
+    )
     title = models.CharField("Название", max_length=255)
     cover_image = models.ImageField(
         "Фото заставки", upload_to="advertisements/covers/%Y/%m/", blank=True
@@ -66,18 +71,14 @@ class Advertisement(TimeStampedModel):
     area_living = models.DecimalField(
         "Жилая площадь (м²)", max_digits=8, decimal_places=2, null=True, blank=True
     )
-    floor_number = models.PositiveSmallIntegerField(
-        "Этаж", null=True, blank=True
-    )
+    floor_number = models.PositiveSmallIntegerField("Этаж", null=True, blank=True)
     total_floors = models.PositiveSmallIntegerField(
         "Всего этажей", null=True, blank=True
     )
     ceiling_height = models.DecimalField(
         "Высота потолков (м)", max_digits=4, decimal_places=2, null=True, blank=True
     )
-    year_built = models.PositiveIntegerField(
-        "Год постройки", null=True, blank=True
-    )
+    year_built = models.PositiveIntegerField("Год постройки", null=True, blank=True)
     renovation_type = models.CharField(
         "Тип ремонта",
         max_length=20,

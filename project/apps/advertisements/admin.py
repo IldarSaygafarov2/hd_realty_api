@@ -2,7 +2,12 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 from modeltranslation.admin import TranslationAdmin, TranslationTabularInline
 
-from project.apps.users.utils import get_moderator, get_realtor, is_moderator, is_realtor
+from project.apps.users.utils import (
+    get_moderator,
+    get_realtor,
+    is_moderator,
+    is_realtor,
+)
 
 from .models import Advertisement, AdvertisementCharacteristic, AdvertisementImage
 
@@ -14,17 +19,29 @@ class AdvertisementImageInline(TabularInline, TranslationTabularInline):
     def has_add_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
     def has_change_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
     def has_delete_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
 
 class AdvertisementCharacteristicInline(TabularInline, TranslationTabularInline):
@@ -34,26 +51,43 @@ class AdvertisementCharacteristicInline(TabularInline, TranslationTabularInline)
     def has_add_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
     def has_change_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
     def has_delete_permission(self, request, obj=None):
         if is_moderator(request.user) and not request.user.is_superuser:
             return False
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
     def has_delete_permission(self, request, obj=None):
-        return request.user.is_superuser or is_realtor(request.user) or is_moderator(request.user)
+        return (
+            request.user.is_superuser
+            or is_realtor(request.user)
+            or is_moderator(request.user)
+        )
 
 
 @admin.register(Advertisement)
 class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
     list_display = (
         "title",
+        "is_hot",
         "price",
         "currency",
         "status",
@@ -62,7 +96,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         "district",
         "created_at",
     )
-    list_filter = ("status", "moderation_status", "category", "district")
+    list_filter = ("status", "moderation_status", "is_hot", "category", "district")
     search_fields = ("title", "address")
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]
     readonly_fields = ("views_count", "created_at", "updated_at")
@@ -165,12 +199,30 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                 class Meta:
                     model = Advertisement
                     fields = [
-                        "title_ru", "title_uz", "description_ru", "description_uz",
-                        "address_ru", "address_uz", "cover_image", "video",
-                        "price", "currency", "num_rooms", "area_total", "area_living",
-                        "floor_number", "total_floors", "year_built", "renovation_type",
-                        "category", "district", "latitude", "longitude",
-                        "status", "moderation_status", "created_by",
+                        "title_ru",
+                        "title_uz",
+                        "description_ru",
+                        "description_uz",
+                        "address_ru",
+                        "address_uz",
+                        "cover_image",
+                        "video",
+                        "price",
+                        "currency",
+                        "num_rooms",
+                        "area_total",
+                        "area_living",
+                        "floor_number",
+                        "total_floors",
+                        "year_built",
+                        "renovation_type",
+                        "category",
+                        "district",
+                        "latitude",
+                        "longitude",
+                        "status",
+                        "moderation_status",
+                        "created_by",
                     ]
 
             kwargs["form"] = ModeratorAdvertisementForm
@@ -282,14 +334,32 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         if is_realtor(request.user) and not request.user.is_superuser:
             fields.append("created_by")
         if is_moderator(request.user) and not request.user.is_superuser:
-            fields.extend([
-                "created_by",
-                "title_ru", "title_uz", "description_ru", "description_uz",
-                "address_ru", "address_uz", "cover_image", "video",
-                "num_rooms", "area_total", "area_living", "floor_number",
-                "total_floors", "year_built", "renovation_type",
-                "price", "currency", "category", "district", "latitude", "longitude",
-            ])
+            fields.extend(
+                [
+                    "created_by",
+                    "title_ru",
+                    "title_uz",
+                    "description_ru",
+                    "description_uz",
+                    "address_ru",
+                    "address_uz",
+                    "cover_image",
+                    "video",
+                    "num_rooms",
+                    "area_total",
+                    "area_living",
+                    "floor_number",
+                    "total_floors",
+                    "year_built",
+                    "renovation_type",
+                    "price",
+                    "currency",
+                    "category",
+                    "district",
+                    "latitude",
+                    "longitude",
+                ]
+            )
         return fields
 
     def _create_new_ad_notification_for_moderator(self, obj):
@@ -312,9 +382,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
 
         if obj.moderation_status == Advertisement.ModerationStatus.APPROVED:
             title = "Объявление одобрено"
-            message = (
-                f'Ваше объявление "{obj.title}" прошло модерацию и одобрено к публикации.'
-            )
+            message = f'Ваше объявление "{obj.title}" прошло модерацию и одобрено к публикации.'
         else:
             title = "Объявление отклонено"
             message = (
