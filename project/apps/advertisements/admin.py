@@ -96,6 +96,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         "district",
         "created_at",
     )
+    list_editable = ("created_by",)
     list_filter = ("status", "moderation_status", "is_hot", "category", "district")
     search_fields = ("title", "address")
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]

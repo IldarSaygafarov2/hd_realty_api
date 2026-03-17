@@ -3,6 +3,13 @@ from decimal import Decimal
 from ninja import Schema
 
 
+class AdvertisementCreatorSchema(Schema):
+    """Создатель объявления (пользователь)."""
+
+    username: str
+    phone: str | None = None
+
+
 class AdvertisementListSchema(Schema):
     """Схема объявления для списка."""
 
@@ -16,6 +23,8 @@ class AdvertisementListSchema(Schema):
     address: str
     district_name: str
     category_name: str
+    is_hot: bool
+    creator: AdvertisementCreatorSchema | None = None
     created_at: str
 
 

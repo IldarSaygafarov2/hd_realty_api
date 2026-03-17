@@ -3,6 +3,7 @@ from ninja import Router, Query
 from project.apps.advertisements.models import Advertisement
 from project.apps.advertisements.schemas import (
     AdvertisementCharacteristicSchema,
+    AdvertisementCreatorSchema,
     AdvertisementDetailSchema,
     AdvertisementListSchema,
     PaginatedAdvertisementsSchema,
@@ -10,11 +11,15 @@ from project.apps.advertisements.schemas import (
 
 router = Router(tags=["advertisements"])
 
-# Объявления для публичного API: одобрены модерацией и активны
-PUBLIC_QUERYSET = Advertisement.objects.filter(
-    moderation_status=Advertisement.ModerationStatus.APPROVED,
-    status=Advertisement.Status.ACTIVE,
-).select_related("category", "district")
+# Базовый queryset для публичного API: одобрены модерацией и активны
+def _public_queryset(select_creator: bool = True):
+    qs = Advertisement.objects.filter(
+        moderation_status=Advertisement.ModerationStatus.APPROVED,
+        status=Advertisement.Status.ACTIVE,
+    ).select_related("category", "district")
+    if select_creator:
+        qs = qs.select_related("created_by")
+    return qs
 
 
 def _build_media_url(request, field) -> str | None:
@@ -25,6 +30,18 @@ def _build_media_url(request, field) -> str | None:
     if request and hasattr(request, "build_absolute_uri"):
         return request.build_absolute_uri(url)
     return url
+
+
+def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
+    if not user:
+        return None
+    phone = getattr(user, "phone", None)
+    if phone is not None and not isinstance(phone, str):
+        phone = str(phone)
+    return AdvertisementCreatorSchema(
+        username=user.get_username(),
+        phone=phone,
+    )
 
 
 def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
@@ -39,6 +56,8 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         address=ad.address or "",
         district_name=ad.district.name,
         category_name=ad.category.name,
+        is_hot=ad.is_hot,
+        creator=_to_creator_schema(ad.created_by),
         created_at=ad.created_at.isoformat() if ad.created_at else "",
     )
 
@@ -94,12 +113,17 @@ def list_advertisements(
     request,
     limit: int = Query(20, ge=1, le=100, description="Количество на странице"),
     offset: int = Query(0, ge=0, description="Смещение"),
+    is_hot: bool | None = Query(
+        None, description="Только горячие объявления (is_hot=True)"
+    ),
 ):
     """
     Список объявлений с пагинацией.
-    Параметры: limit (1-100), offset.
+    Параметры: limit (1-100), offset, is_hot (опционально — только горячие).
     """
-    qs = PUBLIC_QUERYSET.order_by("-created_at")
+    qs = _public_queryset().order_by("-created_at")
+    if is_hot is True:
+        qs = qs.filter(is_hot=True)
     total = qs.count()
     items = qs[offset : offset + limit]
     return PaginatedAdvertisementsSchema(
@@ -114,7 +138,7 @@ def list_advertisements(
 def get_advertisement(request, slug: str):
     """Детальная информация об объявлении по slug."""
     try:
-        ad = PUBLIC_QUERYSET.prefetch_related(
+        ad = _public_queryset().prefetch_related(
             "images", "characteristics"
         ).get(slug=slug)
     except Advertisement.DoesNotExist:

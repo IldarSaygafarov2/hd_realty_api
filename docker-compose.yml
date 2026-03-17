@@ -1,5 +1,13 @@
 # Порты — в .env. DB_HOST_PORT — проброс PostgreSQL на хост (если 5432 занят).
 # Внутри Docker БД всегда на порту 5432; Django подключается к db:5432.
+#
+# Management-команды (контейнеры должны быть запущены):
+#   docker compose exec web python manage.py fill_districts_categories
+#   docker compose exec web python manage.py fill_ads
+#   docker compose exec web python manage.py fill_ads --clear
+# Или разово без запущенного web:
+#   docker compose run --rm web python manage.py fill_districts_categories
+#   docker compose run --rm web python manage.py fill_ads
 
 services:
   web:
