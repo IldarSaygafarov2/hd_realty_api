@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.admin import display
 from unfold.admin import ModelAdmin, TabularInline
 from modeltranslation.admin import TranslationAdmin, TranslationTabularInline
 
@@ -94,13 +95,17 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         "moderation_status",
         "created_by",
         "district",
-        "created_at",
+        "created_at_column",
     )
     list_editable = ("created_by",)
     list_filter = ("status", "moderation_status", "is_hot", "category", "district")
     search_fields = ("title", "address")
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]
     readonly_fields = ("views_count", "created_at", "updated_at")
+
+    @display(description="Создано", ordering="created_at")
+    def created_at_column(self, obj):
+        return obj.created_at
 
     fieldsets = (
         (

@@ -6,6 +6,13 @@ from django.db import models
 from project.infrastructure.models import TimeStampedModel
 
 
+def _advertisement_slug_base(category_slug: str, district_slug: str, price: Decimal, currency: str, num_rooms: int) -> str:
+    """Составная часть slug: тип (категория) + район + цена + валюта + комнаты."""
+    price_int = int(price)
+    curr = (currency or "USD").lower()
+    return f"{category_slug}-{district_slug}-{price_int}-{curr}-{num_rooms}"
+
+
 class Advertisement(TimeStampedModel):
     """Объявление о недвижимости."""
 
@@ -44,7 +51,14 @@ class Advertisement(TimeStampedModel):
     video = models.FileField(
         "Видео", upload_to="advertisements/videos/%Y/%m/", blank=True
     )
-    slug = models.SlugField("Slug", max_length=255, unique=True, db_index=True)
+    slug = models.SlugField(
+        "Slug",
+        max_length=255,
+        unique=True,
+        db_index=True,
+        blank=True,
+        help_text="Пусто при создании — сформируется из категории, района, цены и числа комнат.",
+    )
     description = models.TextField("Описание", blank=True)
     status = models.PositiveSmallIntegerField(
         "Статус", choices=Status.choices, default=Status.DRAFT
@@ -128,6 +142,33 @@ class Advertisement(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    def _generate_unique_slug(self) -> str:
+        if not self.category_id or not self.district_id:
+            from django.utils.crypto import get_random_string
+
+            return f"ad-{get_random_string(12)}"
+        cat_slug = self.category.slug
+        dist_slug = self.district.slug
+        base = _advertisement_slug_base(
+            cat_slug, dist_slug, self.price, self.currency, self.num_rooms
+        )
+        candidate = base
+        n = 0
+        qs = Advertisement.objects.all()
+        if self.pk:
+            qs = qs.exclude(pk=self.pk)
+        while qs.filter(slug=candidate).exists():
+            n += 1
+            suffix = f"-{n}"
+            max_len = 255 - len(suffix)
+            candidate = (base[:max_len] if len(base) > max_len else base) + suffix
+        return candidate[:255]
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and not (self.slug and str(self.slug).strip()):
+            self.slug = self._generate_unique_slug()
+        super().save(*args, **kwargs)
 
 
 class AdvertisementImage(TimeStampedModel):
