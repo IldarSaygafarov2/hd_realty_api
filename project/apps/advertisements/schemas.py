@@ -19,6 +19,8 @@ class AdvertisementListSchema(Schema):
     cover_image_url: str | None
     price: Decimal
     currency: str
+    deal_type: str
+    housing_market: str
     num_rooms: int
     address: str
     district_name: str
@@ -55,6 +57,8 @@ class AdvertisementDetailSchema(Schema):
     video_url: str | None
     price: Decimal
     currency: str
+    deal_type: str
+    housing_market: str
     status: int
     moderation_status: int
     num_rooms: int

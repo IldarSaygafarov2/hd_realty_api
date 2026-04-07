@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from ninja import Router, Query
 
 from project.apps.advertisements.models import Advertisement
@@ -52,6 +54,8 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         cover_image_url=_build_media_url(request, ad.cover_image),
         price=ad.price,
         currency=ad.currency,
+        deal_type=ad.deal_type,
+        housing_market=ad.housing_market,
         num_rooms=ad.num_rooms,
         address=ad.address or "",
         district_name=ad.district.name,
@@ -74,6 +78,8 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
         video_url=_build_media_url(request, ad.video) if ad.video else None,
         price=ad.price,
         currency=ad.currency,
+        deal_type=ad.deal_type,
+        housing_market=ad.housing_market,
         status=ad.status,
         moderation_status=ad.moderation_status,
         num_rooms=ad.num_rooms,
@@ -105,6 +111,45 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
     )
 
 
+def _apply_list_filters(
+    qs,
+    *,
+    deal_type: str | None,
+    housing_market: str | None,
+    category_slug: str | None,
+    district_slug: str | None,
+    rooms: int | None,
+    price_min: Decimal | None,
+    price_max: Decimal | None,
+):
+    dt_values = {c[0] for c in Advertisement.DealType.choices}
+    hm_values = {c[0] for c in Advertisement.HousingMarket.choices}
+    if deal_type is not None:
+        if deal_type not in dt_values:
+            return qs.none()
+        qs = qs.filter(deal_type=deal_type)
+    if housing_market is not None:
+        if housing_market not in hm_values:
+            return qs.none()
+        qs = qs.filter(housing_market=housing_market)
+    if category_slug:
+        qs = qs.filter(category__slug=category_slug)
+    if district_slug:
+        qs = qs.filter(district__slug=district_slug)
+    if rooms is not None:
+        if rooms not in (0, 1, 2, 3, 4):
+            return qs.none()
+        if rooms == 4:
+            qs = qs.filter(num_rooms__gte=4)
+        else:
+            qs = qs.filter(num_rooms=rooms)
+    if price_min is not None:
+        qs = qs.filter(price__gte=price_min)
+    if price_max is not None:
+        qs = qs.filter(price__lte=price_max)
+    return qs
+
+
 @router.get(
     "/advertisements",
     response=PaginatedAdvertisementsSchema,
@@ -116,14 +161,43 @@ def list_advertisements(
     is_hot: bool | None = Query(
         None, description="Только горячие объявления (is_hot=True)"
     ),
+    deal_type: str | None = Query(
+        None,
+        description="Тип сделки: rent (аренда), sale (покупка)",
+    ),
+    housing_market: str | None = Query(
+        None,
+        description="Рынок: new_building (новостройка), secondary (вторичка)",
+    ),
+    category_slug: str | None = Query(
+        None, description="Slug категории (тип недвижимости), например kvartira"
+    ),
+    district_slug: str | None = Query(None, description="Slug района"),
+    rooms: int | None = Query(
+        None,
+        ge=0,
+        le=4,
+        description="Комнаты: 0=студия, 1–3 точно, 4=четыре и больше",
+    ),
+    price_min: Decimal | None = Query(None, ge=0, description="Цена от"),
+    price_max: Decimal | None = Query(None, ge=0, description="Цена до"),
 ):
     """
-    Список объявлений с пагинацией.
-    Параметры: limit (1-100), offset, is_hot (опционально — только горячие).
+    Список объявлений с пагинацией и фильтрами (как на экране поиска).
     """
     qs = _public_queryset().order_by("-created_at")
     if is_hot is True:
         qs = qs.filter(is_hot=True)
+    qs = _apply_list_filters(
+        qs,
+        deal_type=deal_type,
+        housing_market=housing_market,
+        category_slug=category_slug or None,
+        district_slug=district_slug or None,
+        rooms=rooms,
+        price_min=price_min,
+        price_max=price_max,
+    )
     total = qs.count()
     items = qs[offset : offset + limit]
     return PaginatedAdvertisementsSchema(

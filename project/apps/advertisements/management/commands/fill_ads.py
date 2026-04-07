@@ -27,18 +27,98 @@ CHARACTERISTICS_POOL = [
     ("Тип ремонта", "Ta'mir turi", "Без ремонта", "Ta'mirsiz"),
 ]
 
-# 10 объявлений: slug, заголовок (ru, uz), is_hot
+# slug, title_ru, title_uz, is_hot, num_rooms (0=студия), deal_type, housing_market
 ADS_DATA = [
-    ("kvartira-yunusobod-3kom", "3-комнатная квартира в Юнусабаде", "Yunusobodda 3 xonali kvartira", True),
-    ("dom-chilonzor", "Продаётся дом в Чиланзаре", "Chilonzorda uy sotiladi", False),
-    ("kvartira-mirobod-2kom", "Уютная 2-комнатная в Мирабаде", "Mirobodda 2 xonali kvartira", True),
-    ("kvartira-sergeli-remont", "Квартира с ремонтом, Сергели", "Sergelida ta'mirlangan kvartira", False),
-    ("kvartira-yakkasaroy-4kom", "Горячее предложение: 4 комнаты Яккасарай", "Yakkasaroy 4 xona", True),
-    ("uchastok-bektemir", "Участок под строительство, Бектемир", "Bektemir qurilish uchun joy", False),
-    ("studiya-shayxontohur", "Студия в центре, Шайхантаур", "Shayxontohur markazida studiya", True),
-    ("dom-uchtepa-uchastok", "Дом с участком, Учтепа", "Uchtepada uy va uchastka", False),
-    ("novostroyka-olmazor-3kom", "Новостройка Алмазар, 3 комнаты", "Olmazor yangi uy 3 xona", True),
-    ("kommercheskaya-yashnobod", "Коммерческая площадь Яшнабад", "Yashnobodda tijorat maydoni", False),
+    (
+        "kvartira-yunusobod-3kom",
+        "3-комнатная квартира в Юнусабаде",
+        "Yunusobodda 3 xonali kvartira",
+        True,
+        3,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "dom-chilonzor",
+        "Продаётся дом в Чиланзаре",
+        "Chilonzorda uy sotiladi",
+        False,
+        5,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "kvartira-mirobod-2kom",
+        "Уютная 2-комнатная в Мирабаде",
+        "Mirobodda 2 xonali kvartira",
+        True,
+        2,
+        Advertisement.DealType.RENT,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "kvartira-sergeli-remont",
+        "Квартира с ремонтом, Сергели",
+        "Sergelida ta'mirlangan kvartira",
+        False,
+        2,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "kvartira-yakkasaroy-4kom",
+        "Горячее предложение: 4 комнаты Яккасарай",
+        "Yakkasaroy 4 xona",
+        True,
+        4,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "uchastok-bektemir",
+        "Участок под строительство, Бектемир",
+        "Bektemir qurilish uchun joy",
+        False,
+        1,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "studiya-shayxontohur",
+        "Студия в центре, Шайхантаур",
+        "Shayxontohur markazida studiya",
+        True,
+        0,
+        Advertisement.DealType.RENT,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "dom-uchtepa-uchastok",
+        "Дом с участком, Учтепа",
+        "Uchtepada uy va uchastka",
+        False,
+        4,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
+    (
+        "novostroyka-olmazor-3kom",
+        "Новостройка Алмазар, 3 комнаты",
+        "Olmazor yangi uy 3 xona",
+        True,
+        3,
+        Advertisement.DealType.SALE,
+        Advertisement.HousingMarket.NEW_BUILDING,
+    ),
+    (
+        "kommercheskaya-yashnobod",
+        "Коммерческая площадь Яшнабад",
+        "Yashnobodda tijorat maydoni",
+        False,
+        1,
+        Advertisement.DealType.RENT,
+        Advertisement.HousingMarket.SECONDARY,
+    ),
 ]
 
 
@@ -66,7 +146,8 @@ class Command(BaseCommand):
             self.stdout.write(f"Удалено объявлений: {deleted}")
 
         created = 0
-        for i, (slug, title_ru, title_uz, is_hot) in enumerate(ADS_DATA):
+        for i, row in enumerate(ADS_DATA):
+            slug, title_ru, title_uz, is_hot, num_rooms, deal_type, housing_market = row
             ad, was_created = Advertisement.objects.get_or_create(
                 slug=slug,
                 defaults={
@@ -83,10 +164,12 @@ class Command(BaseCommand):
                     "district_id": districts[i % len(districts)].id,
                     "price": Decimal(30_000 + i * 10_000),
                     "currency": Advertisement.Currency.USD,
+                    "deal_type": deal_type,
+                    "housing_market": housing_market,
                     "status": Advertisement.Status.ACTIVE,
                     "moderation_status": Advertisement.ModerationStatus.APPROVED,
                     "is_hot": is_hot,
-                    "num_rooms": (i % 4) + 1,
+                    "num_rooms": num_rooms,
                     "area_total": Decimal(50 + i * 10),
                 },
             )

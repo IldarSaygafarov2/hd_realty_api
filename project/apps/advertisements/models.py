@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
 from project.infrastructure.models import TimeStampedModel
@@ -38,6 +39,18 @@ class Advertisement(TimeStampedModel):
         USD = "USD", "$"
         UZS = "UZS", "сум"
 
+    class DealType(models.TextChoices):
+        """Аренда / покупка (как на витрине поиска)."""
+
+        RENT = "rent", "Аренда"
+        SALE = "sale", "Покупка"
+
+    class HousingMarket(models.TextChoices):
+        """Новостройка или вторичный рынок."""
+
+        NEW_BUILDING = "new_building", "Новостройка"
+        SECONDARY = "secondary", "Вторичка"
+
     # Основное
     is_hot = models.BooleanField(
         "Горячее объявление",
@@ -68,6 +81,21 @@ class Advertisement(TimeStampedModel):
         choices=ModerationStatus.choices,
         default=ModerationStatus.PENDING,
     )
+    deal_type = models.CharField(
+        "Тип сделки",
+        max_length=10,
+        choices=DealType.choices,
+        default=DealType.SALE,
+        db_index=True,
+    )
+    housing_market = models.CharField(
+        "Рынок жилья",
+        max_length=20,
+        choices=HousingMarket.choices,
+        default=HousingMarket.SECONDARY,
+        db_index=True,
+        help_text="Новостройка или вторичка",
+    )
 
     # Цена
     price = models.DecimalField(
@@ -77,8 +105,13 @@ class Advertisement(TimeStampedModel):
         "Валюта", max_length=3, choices=Currency.choices, default=Currency.USD
     )
 
-    # Характеристики
-    num_rooms = models.PositiveSmallIntegerField("Количество комнат", default=1)
+    # Характеристики (0 = студия)
+    num_rooms = models.SmallIntegerField(
+        "Количество комнат",
+        default=1,
+        validators=[MinValueValidator(0), MaxValueValidator(50)],
+        help_text="0 — студия",
+    )
     area_total = models.DecimalField(
         "Общая площадь (м²)", max_digits=8, decimal_places=2, null=True, blank=True
     )

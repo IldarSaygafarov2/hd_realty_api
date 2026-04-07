@@ -98,7 +98,15 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         "created_at_column",
     )
     list_editable = ("created_by",)
-    list_filter = ("status", "moderation_status", "is_hot", "category", "district")
+    list_filter = (
+        "status",
+        "moderation_status",
+        "is_hot",
+        "deal_type",
+        "housing_market",
+        "category",
+        "district",
+    )
     search_fields = ("title", "address")
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]
     readonly_fields = ("views_count", "created_at", "updated_at")
@@ -126,6 +134,8 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     "renovation_type",
                     "price",
                     "currency",
+                    "deal_type",
+                    "housing_market",
                     "category",
                     "district",
                     "latitude",
@@ -168,6 +178,8 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                             "video",
                             "price",
                             "currency",
+                            "deal_type",
+                            "housing_market",
                             "address_ru",
                             "address_uz",
                             "num_rooms",
@@ -215,6 +227,8 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                         "video",
                         "price",
                         "currency",
+                        "deal_type",
+                        "housing_market",
                         "num_rooms",
                         "area_total",
                         "area_living",
@@ -360,6 +374,8 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     "renovation_type",
                     "price",
                     "currency",
+                    "deal_type",
+                    "housing_market",
                     "category",
                     "district",
                     "latitude",
