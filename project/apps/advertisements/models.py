@@ -7,11 +7,17 @@ from django.db import models
 from project.infrastructure.models import TimeStampedModel
 
 
-def _advertisement_slug_base(category_slug: str, district_slug: str, price: Decimal, currency: str, num_rooms: int) -> str:
-    """Составная часть slug: тип (категория) + район + цена + валюта + комнаты."""
+def _advertisement_slug_base(
+    category_slug: str,
+    district_slug: str,
+    price: Decimal,
+    num_rooms: int,
+    currency: str,
+) -> str:
+    """Составная часть slug: категория + район + цена + комнаты + валюта (уникальность по валюте)."""
     price_int = int(price)
     curr = (currency or "USD").lower()
-    return f"{category_slug}-{district_slug}-{price_int}-{curr}-{num_rooms}"
+    return f"{category_slug}-{district_slug}-{price_int}-{num_rooms}-{curr}"
 
 
 class Advertisement(TimeStampedModel):
@@ -70,7 +76,7 @@ class Advertisement(TimeStampedModel):
         unique=True,
         db_index=True,
         blank=True,
-        help_text="Пусто при создании — сформируется из категории, района, цены и числа комнат.",
+        help_text="Пусто при создании — из категории, района, цены, комнат и валюты.",
     )
     description = models.TextField("Описание", blank=True)
     status = models.PositiveSmallIntegerField(
@@ -184,7 +190,7 @@ class Advertisement(TimeStampedModel):
         cat_slug = self.category.slug
         dist_slug = self.district.slug
         base = _advertisement_slug_base(
-            cat_slug, dist_slug, self.price, self.currency, self.num_rooms
+            cat_slug, dist_slug, self.price, self.num_rooms, self.currency
         )
         candidate = base
         n = 0

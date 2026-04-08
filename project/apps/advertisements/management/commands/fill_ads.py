@@ -1,6 +1,6 @@
 """
 Заполнение таблицы объявлений: 10 объявлений, в 5 из них is_hot=True.
-Для каждого объявления создаются характеристики.
+Slug формируется как у модели: категория-район-цена-комнаты-валюта.
 Запуск: python manage.py fill_ads
 Перед запуском выполните: python manage.py fill_districts_categories
 """
@@ -8,7 +8,11 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
-from project.apps.advertisements.models import Advertisement, AdvertisementCharacteristic
+from project.apps.advertisements.models import (
+    Advertisement,
+    AdvertisementCharacteristic,
+    _advertisement_slug_base,
+)
 from project.apps.categories.models import Category
 from project.apps.districts.models import District
 
@@ -27,10 +31,9 @@ CHARACTERISTICS_POOL = [
     ("Тип ремонта", "Ta'mir turi", "Без ремонта", "Ta'mirsiz"),
 ]
 
-# slug, title_ru, title_uz, is_hot, num_rooms (0=студия), deal_type, housing_market
+# title_ru, title_uz, is_hot, num_rooms (0=студия), deal_type, housing_market
 ADS_DATA = [
     (
-        "kvartira-yunusobod-3kom",
         "3-комнатная квартира в Юнусабаде",
         "Yunusobodda 3 xonali kvartira",
         True,
@@ -39,7 +42,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "dom-chilonzor",
         "Продаётся дом в Чиланзаре",
         "Chilonzorda uy sotiladi",
         False,
@@ -48,7 +50,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "kvartira-mirobod-2kom",
         "Уютная 2-комнатная в Мирабаде",
         "Mirobodda 2 xonali kvartira",
         True,
@@ -57,7 +58,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "kvartira-sergeli-remont",
         "Квартира с ремонтом, Сергели",
         "Sergelida ta'mirlangan kvartira",
         False,
@@ -66,7 +66,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "kvartira-yakkasaroy-4kom",
         "Горячее предложение: 4 комнаты Яккасарай",
         "Yakkasaroy 4 xona",
         True,
@@ -75,7 +74,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "uchastok-bektemir",
         "Участок под строительство, Бектемир",
         "Bektemir qurilish uchun joy",
         False,
@@ -84,7 +82,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "studiya-shayxontohur",
         "Студия в центре, Шайхантаур",
         "Shayxontohur markazida studiya",
         True,
@@ -93,7 +90,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "dom-uchtepa-uchastok",
         "Дом с участком, Учтепа",
         "Uchtepada uy va uchastka",
         False,
@@ -102,7 +98,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
     (
-        "novostroyka-olmazor-3kom",
         "Новостройка Алмазар, 3 комнаты",
         "Olmazor yangi uy 3 xona",
         True,
@@ -111,7 +106,6 @@ ADS_DATA = [
         Advertisement.HousingMarket.NEW_BUILDING,
     ),
     (
-        "kommercheskaya-yashnobod",
         "Коммерческая площадь Яшнабад",
         "Yashnobodda tijorat maydoni",
         False,
@@ -120,6 +114,28 @@ ADS_DATA = [
         Advertisement.HousingMarket.SECONDARY,
     ),
 ]
+
+
+def _allocate_unique_slug(
+    *,
+    category: Category,
+    district: District,
+    price: Decimal,
+    num_rooms: int,
+    currency: str,
+) -> str:
+    """Тот же паттерн уникальности, что в Advertisement._generate_unique_slug."""
+    base = _advertisement_slug_base(
+        category.slug, district.slug, price, num_rooms, currency
+    )
+    candidate = base
+    n = 0
+    while Advertisement.objects.filter(slug=candidate).exists():
+        n += 1
+        suffix = f"-{n}"
+        max_len = 255 - len(suffix)
+        candidate = (base[:max_len] if len(base) > max_len else base) + suffix
+    return candidate[:255]
 
 
 class Command(BaseCommand):
@@ -146,8 +162,19 @@ class Command(BaseCommand):
             self.stdout.write(f"Удалено объявлений: {deleted}")
 
         created = 0
+        currency = Advertisement.Currency.USD
         for i, row in enumerate(ADS_DATA):
-            slug, title_ru, title_uz, is_hot, num_rooms, deal_type, housing_market = row
+            title_ru, title_uz, is_hot, num_rooms, deal_type, housing_market = row
+            cat = categories[i % len(categories)]
+            dist = districts[i % len(districts)]
+            price = Decimal(30_000 + i * 10_000)
+            slug = _allocate_unique_slug(
+                category=cat,
+                district=dist,
+                price=price,
+                num_rooms=num_rooms,
+                currency=currency,
+            )
             ad, was_created = Advertisement.objects.get_or_create(
                 slug=slug,
                 defaults={
@@ -160,10 +187,10 @@ class Command(BaseCommand):
                     "address": "",
                     "address_ru": "",
                     "address_uz": "",
-                    "category_id": categories[i % len(categories)].id,
-                    "district_id": districts[i % len(districts)].id,
-                    "price": Decimal(30_000 + i * 10_000),
-                    "currency": Advertisement.Currency.USD,
+                    "category_id": cat.id,
+                    "district_id": dist.id,
+                    "price": price,
+                    "currency": currency,
                     "deal_type": deal_type,
                     "housing_market": housing_market,
                     "status": Advertisement.Status.ACTIVE,
@@ -179,7 +206,6 @@ class Command(BaseCommand):
             # Заполняем характеристики только если их ещё нет (идемпотентность)
             if ad.characteristics.exists():
                 continue
-            # Для каждого объявления добавляем 3–5 характеристик из пула (по индексу)
             pool_size = len(CHARACTERISTICS_POOL)
             for k in range(3 + (i % 3)):
                 nr, nz, vr, vz = CHARACTERISTICS_POOL[(i + k) % pool_size]
