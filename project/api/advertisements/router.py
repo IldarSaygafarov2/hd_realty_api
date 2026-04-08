@@ -4,14 +4,35 @@ from ninja import Router, Query
 
 from project.apps.advertisements.models import Advertisement
 from project.apps.advertisements.schemas import (
+    AdvertisementCategoryNestedSchema,
     AdvertisementCharacteristicSchema,
     AdvertisementCreatorSchema,
     AdvertisementDetailSchema,
+    AdvertisementDistrictNestedSchema,
     AdvertisementListSchema,
     PaginatedAdvertisementsSchema,
 )
 
 router = Router(tags=["advertisements"])
+
+# Значения query для «Любой» в выпадающем списке рынка (новостройка / вторичка / любой)
+_HOUSING_MARKET_SKIP_VALUES = frozenset(
+    {"any", "all", "*", "любой", "lyuboy"},
+)
+
+
+def _housing_market_query_applies(raw: str | None) -> bool:
+    if raw is None:
+        return False
+    s = raw.strip().lower()
+    return bool(s) and s not in _HOUSING_MARKET_SKIP_VALUES
+
+
+def _parse_comma_separated_slugs(value: str | None) -> list[str]:
+    if not value or not value.strip():
+        return []
+    return [p.strip() for p in value.split(",") if p.strip()]
+
 
 # Базовый queryset для публичного API: одобрены модерацией и активны
 def _public_queryset(select_creator: bool = True):
@@ -47,6 +68,8 @@ def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
 
 
 def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
+    cat = ad.category
+    dist = ad.district
     return AdvertisementListSchema(
         id=ad.id,
         title=ad.title,
@@ -58,8 +81,20 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         housing_market=ad.housing_market,
         num_rooms=ad.num_rooms,
         address=ad.address or "",
-        district_name=ad.district.name,
-        category_name=ad.category.name,
+        category=AdvertisementCategoryNestedSchema(
+            id=cat.id,
+            slug=cat.slug,
+            name=cat.name,
+            name_ru=cat.name_ru,
+            name_uz=cat.name_uz,
+        ),
+        district=AdvertisementDistrictNestedSchema(
+            id=dist.id,
+            slug=dist.slug,
+            name=dist.name,
+            name_ru=dist.name_ru,
+            name_uz=dist.name_uz,
+        ),
         is_hot=ad.is_hot,
         creator=_to_creator_schema(ad.created_by),
         created_at=ad.created_at.isoformat() if ad.created_at else "",
@@ -98,9 +133,7 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
         category_id=ad.category_id,
         category_name=ad.category.name,
         image_urls=[
-            _build_media_url(request, img.image) or ""
-            for img in images
-            if img.image
+            _build_media_url(request, img.image) or "" for img in images if img.image
         ],
         characteristics=[
             AdvertisementCharacteristicSchema(name=c.name, value=c.value)
@@ -124,18 +157,23 @@ def _apply_list_filters(
 ):
     dt_values = {c[0] for c in Advertisement.DealType.choices}
     hm_values = {c[0] for c in Advertisement.HousingMarket.choices}
-    if deal_type is not None:
-        if deal_type not in dt_values:
+    if deal_type is not None and str(deal_type).strip():
+        dt = str(deal_type).strip().lower()
+        if dt not in dt_values:
             return qs.none()
-        qs = qs.filter(deal_type=deal_type)
-    if housing_market is not None:
-        if housing_market not in hm_values:
+        qs = qs.filter(deal_type=dt)
+    if _housing_market_query_applies(housing_market):
+        hm = str(housing_market).strip().lower()
+        if hm not in hm_values:
             return qs.none()
-        qs = qs.filter(housing_market=housing_market)
-    if category_slug:
-        qs = qs.filter(category__slug=category_slug)
-    if district_slug:
-        qs = qs.filter(district__slug=district_slug)
+        qs = qs.filter(housing_market=hm)
+    if category_slug and str(category_slug).strip():
+        qs = qs.filter(category__slug=str(category_slug).strip())
+    district_slugs = _parse_comma_separated_slugs(
+        str(district_slug).strip() if district_slug else None
+    )
+    if district_slugs:
+        qs = qs.filter(district__slug__in=district_slugs)
     if rooms is not None:
         if rooms not in (0, 1, 2, 3, 4):
             return qs.none()
@@ -167,12 +205,18 @@ def list_advertisements(
     ),
     housing_market: str | None = Query(
         None,
-        description="Рынок: new_building (новостройка), secondary (вторичка)",
+        description=(
+            "Рынок жилья (как в UI): new_building, secondary. "
+            "Любой вариант — не передавать параметр или передать any / любой"
+        ),
     ),
     category_slug: str | None = Query(
         None, description="Slug категории (тип недвижимости), например kvartira"
     ),
-    district_slug: str | None = Query(None, description="Slug района"),
+    district_slug: str | None = Query(
+        None,
+        description="Slug района; несколько через запятую, например yunusobod,chilonzor",
+    ),
     rooms: int | None = Query(
         None,
         ge=0,
@@ -190,10 +234,10 @@ def list_advertisements(
         qs = qs.filter(is_hot=True)
     qs = _apply_list_filters(
         qs,
-        deal_type=deal_type,
-        housing_market=housing_market,
-        category_slug=category_slug or None,
-        district_slug=district_slug or None,
+        deal_type=deal_type.strip() if deal_type else None,
+        housing_market=housing_market.strip() if housing_market else None,
+        category_slug=category_slug.strip() if category_slug else None,
+        district_slug=district_slug.strip() if district_slug else None,
         rooms=rooms,
         price_min=price_min,
         price_max=price_max,
@@ -208,13 +252,17 @@ def list_advertisements(
     )
 
 
-@router.get("/advertisements/{slug}", response={200: AdvertisementDetailSchema, 404: dict})
+@router.get(
+    "/advertisements/{slug}", response={200: AdvertisementDetailSchema, 404: dict}
+)
 def get_advertisement(request, slug: str):
     """Детальная информация об объявлении по slug."""
     try:
-        ad = _public_queryset().prefetch_related(
-            "images", "characteristics"
-        ).get(slug=slug)
+        ad = (
+            _public_queryset()
+            .prefetch_related("images", "characteristics")
+            .get(slug=slug)
+        )
     except Advertisement.DoesNotExist:
         return 404, {"detail": "Not found"}
     ad.views_count += 1

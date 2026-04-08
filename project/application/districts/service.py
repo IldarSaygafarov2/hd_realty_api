@@ -1,6 +1,7 @@
 """
 Сервис для работы с районами.
 """
+
 from project.apps.districts.models import District
 
 

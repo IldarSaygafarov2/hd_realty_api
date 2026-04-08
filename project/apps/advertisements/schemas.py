@@ -10,6 +10,22 @@ class AdvertisementCreatorSchema(Schema):
     phone: str | None = None
 
 
+class AdvertisementCategoryNestedSchema(Schema):
+    """Категория в списке объявлений (полные данные с переводами)."""
+
+    id: int
+    slug: str
+    name: str
+
+
+class AdvertisementDistrictNestedSchema(Schema):
+    """Район в списке объявлений (полные данные с переводами)."""
+
+    id: int
+    slug: str
+    name: str
+
+
 class AdvertisementListSchema(Schema):
     """Схема объявления для списка."""
 
@@ -23,8 +39,8 @@ class AdvertisementListSchema(Schema):
     housing_market: str
     num_rooms: int
     address: str
-    district_name: str
-    category_name: str
+    category: AdvertisementCategoryNestedSchema
+    district: AdvertisementDistrictNestedSchema
     is_hot: bool
     creator: AdvertisementCreatorSchema | None = None
     created_at: str
