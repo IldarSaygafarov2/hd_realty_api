@@ -41,7 +41,7 @@ def _public_queryset(select_creator: bool = True):
         status=Advertisement.Status.ACTIVE,
     ).select_related("category", "district")
     if select_creator:
-        qs = qs.select_related("created_by")
+        qs = qs.select_related("created_by", "created_by__realtor_profile")
     return qs
 
 
@@ -61,9 +61,17 @@ def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
     phone = getattr(user, "phone", None)
     if phone is not None and not isinstance(phone, str):
         phone = str(phone)
+    seller_type = "user"
+    try:
+        user.realtor_profile  # noqa: B018
+    except AttributeError:
+        pass
+    else:
+        seller_type = "realtor"
     return AdvertisementCreatorSchema(
         username=user.get_username(),
         phone=phone,
+        seller_type=seller_type,
     )
 
 
@@ -74,13 +82,29 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         id=ad.id,
         title=ad.title,
         slug=ad.slug,
+        description=ad.description or "",
         cover_image_url=_build_media_url(request, ad.cover_image),
         price=ad.price,
         currency=ad.currency,
         deal_type=ad.deal_type,
         housing_market=ad.housing_market,
+        residential_complex_name=ad.residential_complex_name or "",
+        developer=ad.developer or "",
         num_rooms=ad.num_rooms,
+        area_total=ad.area_total,
+        area_living=ad.area_living,
+        floor_number=ad.floor_number,
+        total_floors=ad.total_floors,
+        ceiling_height=ad.ceiling_height,
+        renovation_type=ad.renovation_type or "",
+        parking_type=ad.parking_type or "",
+        housing_class=ad.housing_class or "",
+        finishing_type=ad.finishing_type or "",
+        is_furnished=ad.is_furnished,
+        has_commission=ad.has_commission,
         address=ad.address or "",
+        landmark=ad.landmark or "",
+        street_intersection=ad.street_intersection or "",
         category=AdvertisementCategoryNestedSchema(
             id=cat.id,
             slug=cat.slug,
@@ -115,6 +139,8 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
         currency=ad.currency,
         deal_type=ad.deal_type,
         housing_market=ad.housing_market,
+        residential_complex_name=ad.residential_complex_name or "",
+        developer=ad.developer or "",
         status=ad.status,
         moderation_status=ad.moderation_status,
         num_rooms=ad.num_rooms,
@@ -125,7 +151,14 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
         ceiling_height=ad.ceiling_height,
         year_built=ad.year_built,
         renovation_type=ad.renovation_type or "",
+        parking_type=ad.parking_type or "",
+        housing_class=ad.housing_class or "",
+        finishing_type=ad.finishing_type or "",
+        is_furnished=ad.is_furnished,
+        has_commission=ad.has_commission,
         address=ad.address or "",
+        landmark=ad.landmark or "",
+        street_intersection=ad.street_intersection or "",
         latitude=ad.latitude,
         longitude=ad.longitude,
         district_id=ad.district_id,

@@ -10,7 +10,7 @@ class AdvertisementImageTranslationOptions(TranslationOptions):
 
 @register(Advertisement)
 class AdvertisementTranslationOptions(TranslationOptions):
-    fields = ("title", "description", "address")
+    fields = ("title", "description", "address", "landmark", "street_intersection")
     required_languages = ("ru", "uz")
 
 

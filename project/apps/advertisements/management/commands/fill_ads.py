@@ -1,5 +1,7 @@
 """
 Заполнение таблицы объявлений: 10 объявлений, в 5 из них is_hot=True.
+Поля соответствуют модели Advertisement (в т.ч. парковка, класс жилья, отделка, ЖК).
+
 Slug формируется как у модели: категория-район-цена-комнаты-валюта.
 Запуск: python manage.py fill_ads
 Перед запуском выполните: python manage.py fill_districts_categories
@@ -17,18 +19,14 @@ from project.apps.categories.models import Category
 from project.apps.districts.models import District
 
 
-# Характеристики: (name_ru, name_uz, value_ru, value_uz) — для разнообразия берём по индексу
+# Характеристики: (name_ru, name_uz, value_ru, value_uz) — доп. теги вне жёсткой схемы
 CHARACTERISTICS_POOL = [
-    ("Тип ремонта", "Ta'mir turi", "Евроремонт", "Evro ta'mir"),
     ("Балкон", "Balkon", "Да", "Ha"),
     ("Лифт", "Lift", "Да", "Ha"),
-    ("Парковка", "Avtoturargoh", "Подземная", "Yer ostida"),
-    ("Год постройки", "Qurilish yili", "2020", "2020"),
     ("Материал стен", "Devor materiali", "Кирпич", "G'isht"),
     ("Охрана", "Qo'riqlash", "24/7", "24/7"),
     ("Балкон", "Balkon", "Нет", "Yo'q"),
     ("Лифт", "Lift", "Нет", "Yo'q"),
-    ("Тип ремонта", "Ta'mir turi", "Без ремонта", "Ta'mirsiz"),
 ]
 
 # title_ru, title_uz, is_hot, num_rooms (0=студия), deal_type, housing_market
@@ -116,6 +114,111 @@ ADS_DATA = [
 ]
 
 
+def _secondary_location_and_specs(
+    *,
+    i: int,
+    district: District,
+    deal_type: str,
+    area_total: Decimal,
+) -> dict:
+    """Демо-значения полей модели для вторички и аренды (без ЖК/застройщика)."""
+    name_ru = district.name_ru or district.name
+    name_uz = district.name_uz or district.name
+    floor = 1 + (i % 12)
+    total = 9 + (i % 6)
+    if floor > total:
+        floor = total
+
+    renovation_cycle = (
+        Advertisement.RenovationType.EURO,
+        Advertisement.RenovationType.RENOVATION,
+        Advertisement.RenovationType.PRE_FINISHED,
+        Advertisement.RenovationType.NONE,
+        Advertisement.RenovationType.SHELL,
+    )
+    parking_cycle = (
+        Advertisement.ParkingType.OPEN,
+        Advertisement.ParkingType.UNDERGROUND,
+        Advertisement.ParkingType.NONE,
+        Advertisement.ParkingType.COVERED,
+        Advertisement.ParkingType.UNSPECIFIED,
+    )
+    class_cycle = (
+        Advertisement.HousingClass.COMFORT,
+        Advertisement.HousingClass.ECONOMY,
+        Advertisement.HousingClass.BUSINESS,
+        Advertisement.HousingClass.PREMIUM,
+        Advertisement.HousingClass.UNSPECIFIED,
+    )
+    finish_cycle = (
+        Advertisement.FinishingType.FINE,
+        Advertisement.FinishingType.PRE_FINISH,
+        Advertisement.FinishingType.ROUGH,
+        Advertisement.FinishingType.WITHOUT,
+        Advertisement.FinishingType.UNSPECIFIED,
+    )
+
+    living = (area_total * Decimal("0.68")).quantize(Decimal("0.01"))
+    addr_ru = f"ул. Намуна, д. {10 + i}, {name_ru}"
+    addr_uz = f"Namuna ko'chasi, {10 + i}-uy, {name_uz}"
+    lm_ru = f"Ориентир — центр района {name_ru}"
+    lm_uz = f"Orientir — {name_uz} tumani markazi"
+    cross_ru = f"пересечение с ул. Бунёдкор"
+    cross_uz = f"Bunyodkor ko'chasi bilan kesishmasi"
+
+    return {
+        "residential_complex_name": "",
+        "developer": "",
+        "area_living": living,
+        "floor_number": floor,
+        "total_floors": total,
+        "ceiling_height": Decimal("2.72") if i % 2 == 0 else Decimal("3.00"),
+        "year_built": 2005 + (i % 18),
+        "renovation_type": renovation_cycle[i % len(renovation_cycle)],
+        "parking_type": parking_cycle[i % len(parking_cycle)],
+        "housing_class": class_cycle[i % len(class_cycle)],
+        "finishing_type": finish_cycle[i % len(finish_cycle)],
+        "is_furnished": True if deal_type == Advertisement.DealType.RENT else (i % 2 == 0),
+        "has_commission": i % 4 == 1,
+        "address": addr_ru,
+        "address_ru": addr_ru,
+        "address_uz": addr_uz,
+        "landmark": lm_ru,
+        "landmark_ru": lm_ru,
+        "landmark_uz": lm_uz,
+        "street_intersection": cross_ru,
+        "street_intersection_ru": cross_ru,
+        "street_intersection_uz": cross_uz,
+    }
+
+
+def _new_building_extras(*, area_total: Decimal) -> dict:
+    return {
+        "residential_complex_name": "Assalom Sohil",
+        "developer": "Golden House",
+        "parking_type": Advertisement.ParkingType.OPEN,
+        "housing_class": Advertisement.HousingClass.COMFORT,
+        "finishing_type": Advertisement.FinishingType.FINE,
+        "is_furnished": True,
+        "has_commission": False,
+        "renovation_type": Advertisement.RenovationType.EURO,
+        "ceiling_height": Decimal("2.00"),
+        "floor_number": 4,
+        "total_floors": 9,
+        "area_living": (area_total * Decimal("0.68")).quantize(Decimal("0.01")),
+        "year_built": 2025,
+        "landmark": "Ориентир — Узбум",
+        "landmark_ru": "Ориентир — Узбум",
+        "landmark_uz": "Orientir — Uzbum",
+        "street_intersection": "пересечение улиц Янгизамон и Сайхун",
+        "street_intersection_ru": "пересечение улиц Янгизамон и Сайхун",
+        "street_intersection_uz": "Yangizamon va Sayhun ko'chalari kesishmasi",
+        "address": "Мирабадский район, новостройка",
+        "address_ru": "Мирабадский район, новостройка",
+        "address_uz": "Mirobod tumani, yangi uy",
+    }
+
+
 def _allocate_unique_slug(
     *,
     category: Category,
@@ -139,7 +242,7 @@ def _allocate_unique_slug(
 
 
 class Command(BaseCommand):
-    help = "Добавляет 10 объявлений (в 5 is_hot=True). Требуются районы и категории."
+    help = "Добавляет демо-объявления под текущую модель (в т.ч. ЖК, парковка, отделка)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -168,6 +271,7 @@ class Command(BaseCommand):
             cat = categories[i % len(categories)]
             dist = districts[i % len(districts)]
             price = Decimal(30_000 + i * 10_000)
+            area_total = Decimal(50 + i * 10)
             slug = _allocate_unique_slug(
                 category=cat,
                 district=dist,
@@ -175,39 +279,48 @@ class Command(BaseCommand):
                 num_rooms=num_rooms,
                 currency=currency,
             )
+            defaults = {
+                "title": title_ru,
+                "title_ru": title_ru,
+                "title_uz": title_uz,
+                "description": f"Описание объявления: {title_ru}",
+                "description_ru": f"Описание объявления: {title_ru}",
+                "description_uz": f"Tavsif: {title_uz}",
+                "category_id": cat.id,
+                "district_id": dist.id,
+                "price": price,
+                "currency": currency,
+                "deal_type": deal_type,
+                "housing_market": housing_market,
+                "status": Advertisement.Status.ACTIVE,
+                "moderation_status": Advertisement.ModerationStatus.APPROVED,
+                "is_hot": is_hot,
+                "num_rooms": num_rooms,
+                "area_total": area_total,
+            }
+            if housing_market == Advertisement.HousingMarket.NEW_BUILDING:
+                defaults.update(_new_building_extras(area_total=area_total))
+            else:
+                defaults.update(
+                    _secondary_location_and_specs(
+                        i=i,
+                        district=dist,
+                        deal_type=deal_type,
+                        area_total=area_total,
+                    )
+                )
+
             ad, was_created = Advertisement.objects.get_or_create(
                 slug=slug,
-                defaults={
-                    "title": title_ru,
-                    "title_ru": title_ru,
-                    "title_uz": title_uz,
-                    "description": f"Описание объявления: {title_ru}",
-                    "description_ru": f"Описание объявления: {title_ru}",
-                    "description_uz": f"Tavsif: {title_uz}",
-                    "address": "",
-                    "address_ru": "",
-                    "address_uz": "",
-                    "category_id": cat.id,
-                    "district_id": dist.id,
-                    "price": price,
-                    "currency": currency,
-                    "deal_type": deal_type,
-                    "housing_market": housing_market,
-                    "status": Advertisement.Status.ACTIVE,
-                    "moderation_status": Advertisement.ModerationStatus.APPROVED,
-                    "is_hot": is_hot,
-                    "num_rooms": num_rooms,
-                    "area_total": Decimal(50 + i * 10),
-                },
+                defaults=defaults,
             )
             if was_created:
                 created += 1
 
-            # Заполняем характеристики только если их ещё нет (идемпотентность)
             if ad.characteristics.exists():
                 continue
             pool_size = len(CHARACTERISTICS_POOL)
-            for k in range(3 + (i % 3)):
+            for k in range(2 + (i % 3)):
                 nr, nz, vr, vz = CHARACTERISTICS_POOL[(i + k) % pool_size]
                 AdvertisementCharacteristic.objects.create(
                     advertisement=ad,

@@ -8,6 +8,8 @@ class AdvertisementCreatorSchema(Schema):
 
     username: str
     phone: str | None = None
+    # user — обычный пользователь; realtor — есть профиль риелтора
+    seller_type: str
 
 
 class AdvertisementCategoryNestedSchema(Schema):
@@ -16,6 +18,8 @@ class AdvertisementCategoryNestedSchema(Schema):
     id: int
     slug: str
     name: str
+    name_ru: str | None = None
+    name_uz: str | None = None
 
 
 class AdvertisementDistrictNestedSchema(Schema):
@@ -24,21 +28,39 @@ class AdvertisementDistrictNestedSchema(Schema):
     id: int
     slug: str
     name: str
+    name_ru: str | None = None
+    name_uz: str | None = None
 
 
 class AdvertisementListSchema(Schema):
-    """Схема объявления для списка."""
+    """Схема объявления для списка (карточка на витрине)."""
 
     id: int
     title: str
     slug: str
+    description: str
     cover_image_url: str | None
     price: Decimal
     currency: str
     deal_type: str
     housing_market: str
+    residential_complex_name: str
+    developer: str
     num_rooms: int
+    area_total: Decimal | None
+    area_living: Decimal | None
+    floor_number: int | None
+    total_floors: int | None
+    ceiling_height: Decimal | None
+    renovation_type: str
+    parking_type: str
+    housing_class: str
+    finishing_type: str
+    is_furnished: bool | None
+    has_commission: bool
     address: str
+    landmark: str
+    street_intersection: str
     category: AdvertisementCategoryNestedSchema
     district: AdvertisementDistrictNestedSchema
     is_hot: bool
@@ -75,6 +97,8 @@ class AdvertisementDetailSchema(Schema):
     currency: str
     deal_type: str
     housing_market: str
+    residential_complex_name: str
+    developer: str
     status: int
     moderation_status: int
     num_rooms: int
@@ -85,7 +109,14 @@ class AdvertisementDetailSchema(Schema):
     ceiling_height: Decimal | None
     year_built: int | None
     renovation_type: str
+    parking_type: str
+    housing_class: str
+    finishing_type: str
+    is_furnished: bool | None
+    has_commission: bool
     address: str
+    landmark: str
+    street_intersection: str
     latitude: Decimal | None
     longitude: Decimal | None
     district_id: int

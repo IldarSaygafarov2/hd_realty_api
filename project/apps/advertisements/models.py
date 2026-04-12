@@ -36,10 +36,39 @@ class Advertisement(TimeStampedModel):
         REJECTED = 2, "Отклонено"
 
     class RenovationType(models.TextChoices):
+        EURO = "euro", "Евроремонт"
         RENOVATION = "renovation", "Ремонт"
         PRE_FINISHED = "pre_finished", "Предчистовая"
         SHELL = "shell", "Коробка"
         NONE = "none", "Без ремонта"
+
+    class ParkingType(models.TextChoices):
+        """Тип парковки."""
+
+        UNSPECIFIED = "", "Не указано"
+        NONE = "none", "Нет"
+        OPEN = "open", "Открытая"
+        UNDERGROUND = "underground", "Подземная"
+        COVERED = "covered", "Крытая"
+        MULTILEVEL = "multilevel", "Многоуровневая"
+
+    class HousingClass(models.TextChoices):
+        """Класс жилья."""
+
+        UNSPECIFIED = "", "Не указано"
+        ECONOMY = "economy", "Эконом"
+        COMFORT = "comfort", "Комфорт"
+        BUSINESS = "business", "Бизнес"
+        PREMIUM = "premium", "Премиум"
+
+    class FinishingType(models.TextChoices):
+        """Отделка (состояние от застройщика / под чистовую)."""
+
+        UNSPECIFIED = "", "Не указано"
+        WITHOUT = "without", "Без отделки"
+        ROUGH = "rough", "Черновая"
+        PRE_FINISH = "pre_finish", "Предчистовая"
+        FINE = "fine", "Чистовая"
 
     class Currency(models.TextChoices):
         USD = "USD", "$"
@@ -139,9 +168,52 @@ class Advertisement(TimeStampedModel):
         default=RenovationType.NONE,
         blank=True,
     )
+    parking_type = models.CharField(
+        "Парковка",
+        max_length=20,
+        choices=ParkingType.choices,
+        default=ParkingType.UNSPECIFIED,
+        blank=True,
+    )
+    housing_class = models.CharField(
+        "Класс жилья",
+        max_length=20,
+        choices=HousingClass.choices,
+        default=HousingClass.UNSPECIFIED,
+        blank=True,
+    )
+    finishing_type = models.CharField(
+        "Отделка",
+        max_length=20,
+        choices=FinishingType.choices,
+        default=FinishingType.UNSPECIFIED,
+        blank=True,
+    )
+    is_furnished = models.BooleanField("Меблирована", null=True, blank=True)
+    has_commission = models.BooleanField(
+        "Есть комиссия",
+        default=False,
+        help_text="False — «комиссионные нет».",
+    )
+
+    # Новостройка: ЖК и застройщик (для вторички обычно пусто)
+    residential_complex_name = models.CharField(
+        "Жилой комплекс (ЖК)",
+        max_length=255,
+        blank=True,
+        help_text="Актуально для новостроек: название ЖК.",
+    )
+    developer = models.CharField("Застройщик", max_length=255, blank=True)
 
     # Расположение
     address = models.CharField("Адрес", max_length=500, blank=True)
+    landmark = models.CharField("Ориентир", max_length=500, blank=True)
+    street_intersection = models.CharField(
+        "Пересечение улиц",
+        max_length=500,
+        blank=True,
+        help_text="Кратко: какие улицы пересекаются (без дублирования полного адреса).",
+    )
     latitude = models.DecimalField(
         "Широта", max_digits=9, decimal_places=6, null=True, blank=True
     )
