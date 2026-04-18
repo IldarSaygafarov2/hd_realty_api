@@ -10,7 +10,7 @@ from project.apps.users.utils import (
     is_realtor,
 )
 
-from .models import Advertisement, AdvertisementCharacteristic, AdvertisementImage
+from .models import Advertisement, AdvertisementCharacteristic, AdvertisementImage, RenovationType
 
 
 class AdvertisementImageInline(TabularInline, TranslationTabularInline):
@@ -450,3 +450,10 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
             title=title,
             message=message,
         )
+
+
+@admin.register(RenovationType)
+class RenovationTypeAdmin(ModelAdmin, TranslationAdmin):
+    list_display = ("name", "slug", "order")
+    prepopulated_fields = {"slug": ("name",)}
+    ordering = ("order", "slug")

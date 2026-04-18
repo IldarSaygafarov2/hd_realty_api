@@ -20,6 +20,22 @@ def _advertisement_slug_base(
     return f"{category_slug}-{district_slug}-{price_int}-{num_rooms}-{curr}"
 
 
+class RenovationType(TimeStampedModel):
+    """Тип ремонта (справочник)."""
+
+    slug = models.SlugField("Slug", max_length=50, unique=True)
+    name = models.CharField("Название", max_length=100)
+    order = models.PositiveSmallIntegerField("Порядок сортировки", default=0)
+
+    class Meta:
+        verbose_name = "Тип ремонта"
+        verbose_name_plural = "Типы ремонта"
+        ordering = ["order", "slug"]
+
+    def __str__(self):
+        return self.name
+
+
 class Advertisement(TimeStampedModel):
     """Объявление о недвижимости."""
 
@@ -34,13 +50,6 @@ class Advertisement(TimeStampedModel):
         PENDING = 0, "Ожидает модерации"
         APPROVED = 1, "Одобрено"
         REJECTED = 2, "Отклонено"
-
-    class RenovationType(models.TextChoices):
-        EURO = "euro", "Евроремонт"
-        RENOVATION = "renovation", "Ремонт"
-        PRE_FINISHED = "pre_finished", "Предчистовая"
-        SHELL = "shell", "Коробка"
-        NONE = "none", "Без ремонта"
 
     class ParkingType(models.TextChoices):
         """Тип парковки."""
@@ -161,12 +170,13 @@ class Advertisement(TimeStampedModel):
         "Высота потолков (м)", max_digits=4, decimal_places=2, null=True, blank=True
     )
     year_built = models.PositiveIntegerField("Год постройки", null=True, blank=True)
-    renovation_type = models.CharField(
-        "Тип ремонта",
-        max_length=20,
-        choices=RenovationType.choices,
-        default=RenovationType.NONE,
+    renovation_type = models.ForeignKey(
+        RenovationType,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
+        verbose_name="Тип ремонта",
+        related_name="advertisements",
     )
     parking_type = models.CharField(
         "Парковка",

@@ -3,6 +3,17 @@ from decimal import Decimal
 from ninja import Schema
 
 
+class RenovationTypeSchema(Schema):
+    """Тип ремонта."""
+
+    id: int
+    slug: str
+    name: str
+    name_ru: str | None = None
+    name_uz: str | None = None
+    order: int
+
+
 class AdvertisementCreatorSchema(Schema):
     """Создатель объявления (пользователь)."""
 
@@ -52,7 +63,7 @@ class AdvertisementListSchema(Schema):
     floor_number: int | None
     total_floors: int | None
     ceiling_height: Decimal | None
-    renovation_type: str
+    renovation_type: RenovationTypeSchema | None
     parking_type: str
     housing_class: str
     finishing_type: str
@@ -108,7 +119,7 @@ class AdvertisementDetailSchema(Schema):
     total_floors: int | None
     ceiling_height: Decimal | None
     year_built: int | None
-    renovation_type: str
+    renovation_type: RenovationTypeSchema | None
     parking_type: str
     housing_class: str
     finishing_type: str

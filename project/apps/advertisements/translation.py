@@ -1,6 +1,17 @@
 from modeltranslation.translator import TranslationOptions, register
 
-from .models import Advertisement, AdvertisementCharacteristic, AdvertisementImage
+from .models import (
+    Advertisement,
+    AdvertisementCharacteristic,
+    AdvertisementImage,
+    RenovationType,
+)
+
+
+@register(RenovationType)
+class RenovationTypeTranslationOptions(TranslationOptions):
+    fields = ("name",)
+    required_languages = ("ru", "uz")
 
 
 @register(AdvertisementImage)

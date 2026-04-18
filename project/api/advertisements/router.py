@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from ninja import Router, Query
 
-from project.apps.advertisements.models import Advertisement
+from project.apps.advertisements.models import Advertisement, RenovationType
 from project.apps.advertisements.schemas import (
     AdvertisementCategoryNestedSchema,
     AdvertisementCharacteristicSchema,
@@ -11,6 +11,7 @@ from project.apps.advertisements.schemas import (
     AdvertisementDistrictNestedSchema,
     AdvertisementListSchema,
     PaginatedAdvertisementsSchema,
+    RenovationTypeSchema,
 )
 
 router = Router(tags=["advertisements"])
@@ -39,7 +40,7 @@ def _public_queryset(select_creator: bool = True):
     qs = Advertisement.objects.filter(
         moderation_status=Advertisement.ModerationStatus.APPROVED,
         status=Advertisement.Status.ACTIVE,
-    ).select_related("category", "district")
+    ).select_related("category", "district", "renovation_type")
     if select_creator:
         qs = qs.select_related("created_by", "created_by__realtor_profile")
     return qs
@@ -75,6 +76,19 @@ def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
     )
 
 
+def _to_renovation_type_schema(rt) -> RenovationTypeSchema | None:
+    if rt is None:
+        return None
+    return RenovationTypeSchema(
+        id=rt.id,
+        slug=rt.slug,
+        name=rt.name,
+        name_ru=getattr(rt, "name_ru", None),
+        name_uz=getattr(rt, "name_uz", None),
+        order=rt.order,
+    )
+
+
 def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
     cat = ad.category
     dist = ad.district
@@ -96,7 +110,7 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         floor_number=ad.floor_number,
         total_floors=ad.total_floors,
         ceiling_height=ad.ceiling_height,
-        renovation_type=ad.renovation_type or "",
+        renovation_type=_to_renovation_type_schema(ad.renovation_type),
         parking_type=ad.parking_type or "",
         housing_class=ad.housing_class or "",
         finishing_type=ad.finishing_type or "",
@@ -150,7 +164,7 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
         total_floors=ad.total_floors,
         ceiling_height=ad.ceiling_height,
         year_built=ad.year_built,
-        renovation_type=ad.renovation_type or "",
+        renovation_type=_to_renovation_type_schema(ad.renovation_type),
         parking_type=ad.parking_type or "",
         housing_class=ad.housing_class or "",
         finishing_type=ad.finishing_type or "",
@@ -301,3 +315,12 @@ def get_advertisement(request, slug: str):
     ad.views_count += 1
     ad.save(update_fields=["views_count"])
     return _to_detail_schema(request, ad)
+
+
+@router.get("/renovation-types", response=list[RenovationTypeSchema], tags=["renovation-types"])
+def list_renovation_types(request):
+    """Список всех типов ремонта."""
+    return [
+        _to_renovation_type_schema(rt)
+        for rt in RenovationType.objects.all()
+    ]
