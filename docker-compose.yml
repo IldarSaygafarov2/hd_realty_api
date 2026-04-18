@@ -17,7 +17,8 @@ services:
     environment:
       - PYTHONPATH=/app
     command: >
-      sh -c "python manage.py migrate --noinput &&
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate --noinput &&
              python manage.py update_translation_fields 2>/dev/null || true &&
              python manage.py fill_districts_categories &&
              python manage.py fill_renovation_types &&
@@ -45,7 +46,7 @@ services:
     ports:
       - "${DB_HOST_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 5s
       timeout: 5s
       retries: 5
