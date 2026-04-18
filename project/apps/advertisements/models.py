@@ -25,12 +25,11 @@ class RenovationType(TimeStampedModel):
 
     slug = models.SlugField("Slug", max_length=50, unique=True)
     name = models.CharField("Название", max_length=100)
-    order = models.PositiveSmallIntegerField("Порядок сортировки", default=0)
 
     class Meta:
         verbose_name = "Тип ремонта"
         verbose_name_plural = "Типы ремонта"
-        ordering = ["order", "slug"]
+        ordering = ["slug"]
 
     def __str__(self):
         return self.name

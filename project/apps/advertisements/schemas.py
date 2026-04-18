@@ -11,7 +11,6 @@ class RenovationTypeSchema(Schema):
     name: str
     name_ru: str | None = None
     name_uz: str | None = None
-    order: int
 
 
 class AdvertisementCreatorSchema(Schema):

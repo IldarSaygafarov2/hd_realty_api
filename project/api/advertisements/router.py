@@ -85,7 +85,6 @@ def _to_renovation_type_schema(rt) -> RenovationTypeSchema | None:
         name=rt.name,
         name_ru=getattr(rt, "name_ru", None),
         name_uz=getattr(rt, "name_uz", None),
-        order=rt.order,
     )
 
 

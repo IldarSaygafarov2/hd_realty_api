@@ -3,10 +3,12 @@
 #
 # Management-команды (контейнеры должны быть запущены):
 #   docker compose exec web python manage.py fill_districts_categories
+#   docker compose exec web python manage.py fill_renovation_types
 #   docker compose exec web python manage.py fill_ads
 #   docker compose exec web python manage.py fill_ads --clear
 # Или разово без запущенного web:
 #   docker compose run --rm web python manage.py fill_districts_categories
+#   docker compose run --rm web python manage.py fill_renovation_types
 #   docker compose run --rm web python manage.py fill_ads
 
 services:
@@ -17,6 +19,8 @@ services:
     command: >
       sh -c "python manage.py migrate --noinput &&
              python manage.py update_translation_fields 2>/dev/null || true &&
+             python manage.py fill_districts_categories &&
+             python manage.py fill_renovation_types &&
              python manage.py collectstatic --noinput &&
              python manage.py createsuperuser --noinput 2>/dev/null || true &&
              gunicorn --bind 0.0.0.0:8000 --workers 3 core.wsgi:application"

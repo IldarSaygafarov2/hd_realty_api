@@ -20,12 +20,11 @@ class Migration(migrations.Migration):
                 ('name', models.CharField(max_length=100, verbose_name='Название')),
                 ('name_ru', models.CharField(max_length=100, null=True, verbose_name='Название')),
                 ('name_uz', models.CharField(max_length=100, null=True, verbose_name='Название')),
-                ('order', models.PositiveSmallIntegerField(default=0, verbose_name='Порядок сортировки')),
             ],
             options={
                 'verbose_name': 'Тип ремонта',
                 'verbose_name_plural': 'Типы ремонта',
-                'ordering': ['order', 'slug'],
+                'ordering': ['slug'],
             },
         ),
         # 2. Добавить FK поле renovation_type_new (nullable, без конфликта с существующим полем)

@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from project.apps.advertisements.models import (
     Advertisement,
     AdvertisementCharacteristic,
+    RenovationType,
     _advertisement_slug_base,
 )
 from project.apps.categories.models import Category
@@ -129,13 +130,9 @@ def _secondary_location_and_specs(
     if floor > total:
         floor = total
 
-    renovation_cycle = (
-        Advertisement.RenovationType.EURO,
-        Advertisement.RenovationType.RENOVATION,
-        Advertisement.RenovationType.PRE_FINISHED,
-        Advertisement.RenovationType.NONE,
-        Advertisement.RenovationType.SHELL,
-    )
+    renovation_slugs = ("euro", "standard", "pre_finish", "no_renovation", "shell")
+    renovation_objects = {rt.slug: rt for rt in RenovationType.objects.filter(slug__in=renovation_slugs)}
+    renovation_cycle = tuple(renovation_objects.get(s) for s in renovation_slugs)
     parking_cycle = (
         Advertisement.ParkingType.OPEN,
         Advertisement.ParkingType.UNDERGROUND,
@@ -192,7 +189,7 @@ def _secondary_location_and_specs(
     }
 
 
-def _new_building_extras(*, area_total: Decimal) -> dict:
+def _new_building_extras(*, area_total: Decimal, euro_renovation) -> dict:
     return {
         "residential_complex_name": "Assalom Sohil",
         "developer": "Golden House",
@@ -201,7 +198,7 @@ def _new_building_extras(*, area_total: Decimal) -> dict:
         "finishing_type": Advertisement.FinishingType.FINE,
         "is_furnished": True,
         "has_commission": False,
-        "renovation_type": Advertisement.RenovationType.EURO,
+        "renovation_type": euro_renovation,
         "ceiling_height": Decimal("2.00"),
         "floor_number": 4,
         "total_floors": 9,
@@ -260,6 +257,8 @@ class Command(BaseCommand):
             )
             return
 
+        euro_renovation = RenovationType.objects.filter(slug="euro").first()
+
         if options["clear"]:
             deleted, _ = Advertisement.objects.all().delete()
             self.stdout.write(f"Удалено объявлений: {deleted}")
@@ -299,7 +298,7 @@ class Command(BaseCommand):
                 "area_total": area_total,
             }
             if housing_market == Advertisement.HousingMarket.NEW_BUILDING:
-                defaults.update(_new_building_extras(area_total=area_total))
+                defaults.update(_new_building_extras(area_total=area_total, euro_renovation=euro_renovation))
             else:
                 defaults.update(
                     _secondary_location_and_specs(

@@ -454,6 +454,6 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
 
 @admin.register(RenovationType)
 class RenovationTypeAdmin(ModelAdmin, TranslationAdmin):
-    list_display = ("name", "slug", "order")
+    list_display = ("name", "slug")
     prepopulated_fields = {"slug": ("name",)}
-    ordering = ("order", "slug")
+    ordering = ("slug",)
