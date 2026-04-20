@@ -213,8 +213,11 @@ def _apply_list_filters(
         if hm not in hm_values:
             return qs.none()
         qs = qs.filter(housing_market=hm)
-    if category_slug and str(category_slug).strip():
-        qs = qs.filter(category__slug=str(category_slug).strip())
+    category_slugs = _parse_comma_separated_slugs(
+        str(category_slug).strip() if category_slug else None
+    )
+    if category_slugs:
+        qs = qs.filter(category__slug__in=category_slugs)
     district_slugs = _parse_comma_separated_slugs(
         str(district_slug).strip() if district_slug else None
     )
@@ -257,7 +260,8 @@ def list_advertisements(
         ),
     ),
     category_slug: str | None = Query(
-        None, description="Slug категории (тип недвижимости), например kvartira"
+        None,
+        description="Slug категории; несколько через запятую, например kvartira,dom",
     ),
     district_slug: str | None = Query(
         None,
