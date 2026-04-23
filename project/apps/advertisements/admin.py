@@ -227,7 +227,18 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     },
                 ),
             )
-        return super().get_fieldsets(request, obj)
+        fieldsets = super().get_fieldsets(request, obj)
+        if obj is None:
+            cleaned = []
+            for name, opts in fieldsets:
+                fields = tuple(
+                    f for f in opts.get("fields", ()) if f not in ("created_at", "updated_at")
+                )
+                if not fields:
+                    continue
+                cleaned.append((name, {**opts, "fields": fields}))
+            return tuple(cleaned)
+        return fieldsets
 
     def get_form(self, request, obj=None, **kwargs):
         if is_moderator(request.user) and not request.user.is_superuser:
