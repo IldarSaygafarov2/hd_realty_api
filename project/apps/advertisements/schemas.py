@@ -50,6 +50,7 @@ class AdvertisementListSchema(Schema):
     slug: str
     description: str
     cover_image_url: str | None
+    image_urls: list[str] = []
     price: Decimal
     currency: str
     deal_type: str

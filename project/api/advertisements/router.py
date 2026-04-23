@@ -91,12 +91,19 @@ def _to_renovation_type_schema(rt) -> RenovationTypeSchema | None:
 def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
     cat = ad.category
     dist = ad.district
+    images = sorted(ad.images.all(), key=lambda img: img.id)
+    image_urls = [
+        url
+        for url in (_build_media_url(request, img.image) for img in images if img.image)
+        if url
+    ]
     return AdvertisementListSchema(
         id=ad.id,
         title=ad.title,
         slug=ad.slug,
         description=ad.description or "",
         cover_image_url=_build_media_url(request, ad.cover_image),
+        image_urls=image_urls,
         price=ad.price,
         currency=ad.currency,
         deal_type=ad.deal_type,
@@ -279,7 +286,7 @@ def list_advertisements(
     """
     Список объявлений с пагинацией и фильтрами (как на экране поиска).
     """
-    qs = _public_queryset().order_by("-created_at")
+    qs = _public_queryset().prefetch_related("images").order_by("-created_at")
     if is_hot is True:
         qs = qs.filter(is_hot=True)
     qs = _apply_list_filters(
@@ -320,10 +327,9 @@ def get_advertisement(request, slug: str):
     return _to_detail_schema(request, ad)
 
 
-@router.get("/renovation-types", response=list[RenovationTypeSchema], tags=["renovation-types"])
+@router.get(
+    "/renovation-types", response=list[RenovationTypeSchema], tags=["renovation-types"]
+)
 def list_renovation_types(request):
     """Список всех типов ремонта."""
-    return [
-        _to_renovation_type_schema(rt)
-        for rt in RenovationType.objects.all()
-    ]
+    return [_to_renovation_type_schema(rt) for rt in RenovationType.objects.all()]
