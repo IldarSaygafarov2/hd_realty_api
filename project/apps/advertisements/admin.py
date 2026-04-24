@@ -10,7 +10,12 @@ from project.apps.users.utils import (
     is_realtor,
 )
 
-from .models import Advertisement, AdvertisementCharacteristic, AdvertisementImage, RenovationType
+from .models import (
+    Advertisement,
+    AdvertisementCharacteristic,
+    AdvertisementImage,
+    RenovationType,
+)
 
 
 class AdvertisementImageInline(TabularInline, TranslationTabularInline):
@@ -97,7 +102,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         "district",
         "created_at_column",
     )
-    list_editable = ("created_by",)
+    list_editable = ("created_by", "is_hot")
     list_filter = (
         "status",
         "moderation_status",
@@ -156,7 +161,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         (
             "Модерация",
             {
-                "fields": ("status", "moderation_status", "created_by"),
+                "fields": ("status", "moderation_status", "is_hot", "created_by"),
                 "description": "Укажите результат проверки объявления.",
             },
         ),
@@ -222,7 +227,12 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                 (
                     "Модерация",
                     {
-                        "fields": ("status", "moderation_status", "created_by"),
+                        "fields": (
+                            "status",
+                            "moderation_status",
+                            "is_hot",
+                            "created_by",
+                        ),
                         "description": "Укажите результат проверки объявления.",
                     },
                 ),
@@ -232,7 +242,9 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
             cleaned = []
             for name, opts in fieldsets:
                 fields = tuple(
-                    f for f in opts.get("fields", ()) if f not in ("created_at", "updated_at")
+                    f
+                    for f in opts.get("fields", ())
+                    if f not in ("created_at", "updated_at")
                 )
                 if not fields:
                     continue
@@ -287,6 +299,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                         "longitude",
                         "status",
                         "moderation_status",
+                        "is_hot",
                         "created_by",
                     ]
 
@@ -398,6 +411,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
             fields.extend(["created_at", "updated_at"])
         if is_realtor(request.user) and not request.user.is_superuser:
             fields.append("created_by")
+            fields.append("is_hot")
         if is_moderator(request.user) and not request.user.is_superuser:
             fields.extend(
                 [

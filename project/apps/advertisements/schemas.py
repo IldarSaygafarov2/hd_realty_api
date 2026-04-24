@@ -17,6 +17,10 @@ class AdvertisementCreatorSchema(Schema):
     """Создатель объявления (пользователь)."""
 
     username: str
+    first_name: str = ""
+    last_name: str = ""
+    full_name: str = ""
+    email: str | None = None
     phone: str | None = None
     # user — обычный пользователь; realtor — есть профиль риелтора
     seller_type: str
@@ -136,5 +140,6 @@ class AdvertisementDetailSchema(Schema):
     category_name: str
     image_urls: list[str]
     characteristics: list[AdvertisementCharacteristicSchema]
+    creator: AdvertisementCreatorSchema | None = None
     views_count: int
     created_at: str

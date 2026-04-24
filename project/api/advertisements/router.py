@@ -62,6 +62,15 @@ def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
     phone = getattr(user, "phone", None)
     if phone is not None and not isinstance(phone, str):
         phone = str(phone)
+    first_name = getattr(user, "first_name", "") or ""
+    last_name = getattr(user, "last_name", "") or ""
+    full_name = ""
+    get_full_name = getattr(user, "get_full_name", None)
+    if callable(get_full_name):
+        full_name = (get_full_name() or "").strip()
+    if not full_name:
+        full_name = " ".join(p for p in (first_name, last_name) if p).strip()
+    email = getattr(user, "email", "") or None
     seller_type = "user"
     try:
         user.realtor_profile  # noqa: B018
@@ -71,6 +80,10 @@ def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
         seller_type = "realtor"
     return AdvertisementCreatorSchema(
         username=user.get_username(),
+        first_name=first_name,
+        last_name=last_name,
+        full_name=full_name,
+        email=email,
         phone=phone,
         seller_type=seller_type,
     )
@@ -192,6 +205,7 @@ def _to_detail_schema(request, ad: Advertisement) -> AdvertisementDetailSchema:
             AdvertisementCharacteristicSchema(name=c.name, value=c.value)
             for c in ad.characteristics.all().order_by("id")
         ],
+        creator=_to_creator_schema(ad.created_by),
         views_count=ad.views_count,
         created_at=ad.created_at.isoformat() if ad.created_at else "",
     )
