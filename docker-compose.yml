@@ -22,6 +22,7 @@ services:
              python manage.py update_translation_fields 2>/dev/null || true &&
              python manage.py fill_districts_categories &&
              python manage.py fill_renovation_types &&
+             python manage.py fill_ads &&
              python manage.py collectstatic --noinput &&
              python manage.py createsuperuser --noinput 2>/dev/null || true &&
              gunicorn --bind 0.0.0.0:8000 --workers 3 core.wsgi:application"

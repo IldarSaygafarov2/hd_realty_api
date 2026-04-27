@@ -42,7 +42,11 @@ def _public_queryset(select_creator: bool = True):
         status=Advertisement.Status.ACTIVE,
     ).select_related("category", "district", "renovation_type")
     if select_creator:
-        qs = qs.select_related("created_by", "created_by__realtor_profile")
+        qs = qs.select_related(
+            "created_by",
+            "created_by__profile",
+            "created_by__realtor_profile",
+        )
     return qs
 
 
@@ -59,9 +63,12 @@ def _build_media_url(request, field) -> str | None:
 def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:
     if not user:
         return None
-    phone = getattr(user, "phone", None)
+    profile = getattr(user, "profile", None)
+    phone = getattr(profile, "phone", None) if profile is not None else None
     if phone is not None and not isinstance(phone, str):
         phone = str(phone)
+    if not phone:
+        phone = None
     first_name = getattr(user, "first_name", "") or ""
     last_name = getattr(user, "last_name", "") or ""
     full_name = ""
