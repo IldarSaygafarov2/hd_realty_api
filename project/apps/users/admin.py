@@ -76,18 +76,6 @@ class CustomUserCreationForm(UserCreationForm):
             user.is_staff = True
         if commit:
             user.save()
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={"phone": (self.cleaned_data.get("phone") or "").strip()},
-            )
-            role = self.cleaned_data.get("role")
-            if role == ROLE_MODERATOR:
-                Moderator.objects.get_or_create(user=user)
-            elif role == ROLE_REALTOR:
-                Realtor.objects.create(
-                    user=user,
-                    moderator=self.cleaned_data["moderator"],
-                )
         return user
 
 
@@ -107,15 +95,6 @@ class CustomUserChangeForm(UserChangeForm):
             profile = getattr(self.instance, "profile", None)
             if profile is not None:
                 self.fields["phone"].initial = profile.phone
-
-    def save(self, commit=True):
-        user = super().save(commit=commit)
-        if commit:
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={"phone": (self.cleaned_data.get("phone") or "").strip()},
-            )
-        return user
 
 
 admin.site.unregister(User)
@@ -195,6 +174,29 @@ class UserAdmin(BaseUserAdmin, ModelAdmin):
         if is_realtor(obj):
             return "Риелтор"
         return "—"
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+
+        if "phone" in form.cleaned_data:
+            UserProfile.objects.update_or_create(
+                user=obj,
+                defaults={
+                    "phone": (form.cleaned_data.get("phone") or "").strip(),
+                },
+            )
+
+        if not change:
+            role = form.cleaned_data.get("role")
+            if role == ROLE_MODERATOR:
+                Moderator.objects.get_or_create(user=obj)
+            elif role == ROLE_REALTOR:
+                moderator = form.cleaned_data.get("moderator")
+                if moderator is not None:
+                    Realtor.objects.get_or_create(
+                        user=obj,
+                        defaults={"moderator": moderator},
+                    )
 
 
 @admin.register(Group)
