@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     "project.apps.advertisements.apps.AdvertisementsConfig",
     "project.apps.users.apps.UsersConfig",
     "project.apps.portfolio.apps.PortfolioConfig",
+    "project.apps.consultations.apps.ConsultationsConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
