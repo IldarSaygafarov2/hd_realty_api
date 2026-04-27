@@ -2,6 +2,25 @@ from django.conf import settings
 from django.db import models
 
 
+class UserProfile(models.Model):
+    """Дополнительные поля пользователя (телефон и т. п.)."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="profile",
+        verbose_name="Пользователь",
+    )
+    phone = models.CharField("Телефон", max_length=32, blank=True)
+
+    class Meta:
+        verbose_name = "Профиль пользователя"
+        verbose_name_plural = "Профили пользователей"
+
+    def __str__(self):
+        return f"{self.user} ({self.phone})" if self.phone else str(self.user)
+
+
 class Moderator(models.Model):
     """Модератор — привязан к пользователю Django."""
 
