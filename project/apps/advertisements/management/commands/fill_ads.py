@@ -2,7 +2,10 @@
 Заполнение таблицы объявлений: 10 объявлений, в 5 из них is_hot=True.
 Поля соответствуют модели Advertisement (в т.ч. парковка, класс жилья, отделка, ЖК).
 
-Slug формируется как у модели: категория-район-цена-комнаты-валюта.
+Цена задаётся в USD (`price_usd`); цена в UZS (`price`) автоматически
+пересчитывается в `Advertisement.save()` по текущему курсу из constance.
+
+Slug формируется как у модели: категория-район-цена_uzs-комнаты-UZS.
 Запуск: python manage.py fill_ads
 Перед запуском выполните: python manage.py fill_districts_categories
 """
@@ -16,6 +19,7 @@ from project.apps.advertisements.models import (
     RenovationType,
     _advertisement_slug_base,
 )
+from project.apps.advertisements.services.currency import get_current_usd_rate
 from project.apps.categories.models import Category
 from project.apps.districts.models import District
 
@@ -263,20 +267,24 @@ class Command(BaseCommand):
             deleted, _ = Advertisement.objects.all().delete()
             self.stdout.write(f"Удалено объявлений: {deleted}")
 
+        # Курс USD/UZS: из constance, при отсутствии — fallback.
+        usd_rate = get_current_usd_rate() or Decimal("12000")
+
         created = 0
-        currency = Advertisement.Currency.USD
         for i, row in enumerate(ADS_DATA):
             title_ru, title_uz, is_hot, num_rooms, deal_type, housing_market = row
             cat = categories[i % len(categories)]
             dist = districts[i % len(districts)]
-            price = Decimal(30_000 + i * 10_000)
+            # Цена задаётся в USD; UZS-эквивалент пересчитает Advertisement.save().
+            price_usd = Decimal(30_000 + i * 10_000)
+            price_uzs = (price_usd * usd_rate).quantize(Decimal("1"))
             area_total = Decimal(50 + i * 10)
             slug = _allocate_unique_slug(
                 category=cat,
                 district=dist,
-                price=price,
+                price=price_uzs,
                 num_rooms=num_rooms,
-                currency=currency,
+                currency=Advertisement.Currency.UZS,
             )
             defaults = {
                 "title": title_ru,
@@ -287,8 +295,7 @@ class Command(BaseCommand):
                 "description_uz": f"Tavsif: {title_uz}",
                 "category_id": cat.id,
                 "district_id": dist.id,
-                "price": price,
-                "currency": currency,
+                "price_usd": price_usd,
                 "deal_type": deal_type,
                 "housing_market": housing_market,
                 "status": Advertisement.Status.ACTIVE,
