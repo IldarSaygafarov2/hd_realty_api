@@ -15,8 +15,23 @@ server {
         alias /opt/hd_realty/staticfiles/;
     }
 
+    # SPA с другого origin: CORS только здесь — Django не участвует в раздаче /media/.
     location /media/ {
         alias /opt/hd_realty/media/;
+
+        if ($request_method = OPTIONS) {
+            add_header Access-Control-Allow-Origin * always;
+            add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+            add_header Access-Control-Allow-Headers "Range" always;
+            add_header Access-Control-Max-Age 86400 always;
+            add_header Content-Length 0;
+            return 204;
+        }
+
+        add_header Access-Control-Allow-Origin * always;
+        add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Range" always;
+        add_header Access-Control-Expose-Headers "Accept-Ranges, Content-Length, Content-Range" always;
     }
 
     location / {

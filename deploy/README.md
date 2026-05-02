@@ -19,9 +19,11 @@ nano .env  # SECRET_KEY, ALLOWED_HOSTS, DB_PASSWORD
 - `NGINX_HTTP_PORT=8080` — приложение будет на порту 8080
 - `COMPOSE_PROJECT_NAME=hd_realty` — уникальное имя проекта
 
-**CSRF и CORS** — в `.env` указать домены:
+**CSRF и CORS (API Django)** — в `.env` указать домены:
 - `CSRF_TRUSTED_ORIGINS=https://ваш-домен.com,http://IP:8080`
-- `CORS_ALLOWED_ORIGINS=https://ваш-домен.com,http://фронтенд:3000`
+- `CORS_ALLOWED_ORIGINS=https://ваш-домен.com,http://фронтенд:5173,...`
+
+Это действует только на ответы **приложения** (REST и т.д.). Файлы **`/media/`** (видео, изображения) отдаёт **nginx**, поэтому для них уже прописаны заголовки CORS в `deploy/nginx-docker.conf` (после правок перезапустите контейнер `nginx`: `docker compose ... restart nginx`). Если медиа отдаёте не из этого образа — продублируйте тот же блок `location /media/` в своём конфиге.
 
 ## 3. Запуск
 
