@@ -36,3 +36,22 @@ class ContactRequestSchema(Schema):
     phone: str
     status: str
     created_at: str
+
+
+class NextStepRequestCreateSchema(Schema):
+    """Входящие данные с формы «Оставьте заявку — подскажем следующий шаг»."""
+
+    name: str = Field(..., min_length=1, max_length=150)
+    phone: str = Field(..., min_length=3, max_length=32)
+    task_description: str | None = Field(default=None, max_length=4000)
+
+
+class NextStepRequestSchema(Schema):
+    """Заявка «Подскажем следующий шаг» (ответ API)."""
+
+    id: int
+    name: str
+    phone: str
+    task_description: str
+    status: str
+    created_at: str

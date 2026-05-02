@@ -141,11 +141,23 @@ class Advertisement(TimeStampedModel):
     )
 
     # Цена
+    price_usd = models.DecimalField(
+        "Цена в USD",
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Цена в долларах. При сохранении пересчитывается в сумы по курсу ЦБ.",
+    )
     price = models.DecimalField(
-        "Цена", max_digits=12, decimal_places=0, default=Decimal("0")
+        "Цена в UZS (авто)",
+        max_digits=14,
+        decimal_places=0,
+        default=Decimal("0"),
+        help_text="Заполняется автоматически из price_usd по последнему курсу USD.",
     )
     currency = models.CharField(
-        "Валюта", max_length=3, choices=Currency.choices, default=Currency.USD
+        "Валюта", max_length=3, choices=Currency.choices, default=Currency.UZS
     )
 
     # Характеристики (0 = студия)
@@ -285,7 +297,27 @@ class Advertisement(TimeStampedModel):
             candidate = (base[:max_len] if len(base) > max_len else base) + suffix
         return candidate[:255]
 
+    def recalculate_price_from_usd(self) -> bool:
+        """Пересчитать `price` (UZS) из `price_usd` по текущему курсу USD.
+
+        Курс хранится в django-constance (`USD_RATE`).
+        Возвращает True, если значения цены/валюты были обновлены.
+        """
+        if self.price_usd is None:
+            return False
+        from project.apps.advertisements.services.currency import get_current_usd_rate
+
+        rate = get_current_usd_rate()
+        if rate is None or rate <= 0:
+            return False
+        new_price = (Decimal(self.price_usd) * rate).quantize(Decimal("1"))
+        changed = self.price != new_price or self.currency != self.Currency.UZS
+        self.price = new_price
+        self.currency = self.Currency.UZS
+        return changed
+
     def save(self, *args, **kwargs):
+        self.recalculate_price_from_usd()
         if self._state.adding and not (self.slug and str(self.slug).strip()):
             self.slug = self._generate_unique_slug()
         super().save(*args, **kwargs)

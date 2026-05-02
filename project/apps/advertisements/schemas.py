@@ -56,6 +56,7 @@ class AdvertisementListSchema(Schema):
     cover_image_url: str | None
     image_urls: list[str] = []
     price: Decimal
+    price_usd: Decimal | None = None
     currency: str
     deal_type: str
     housing_market: str
@@ -109,6 +110,7 @@ class AdvertisementDetailSchema(Schema):
     cover_image_url: str | None
     video_url: str | None
     price: Decimal
+    price_usd: Decimal | None = None
     currency: str
     deal_type: str
     housing_market: str

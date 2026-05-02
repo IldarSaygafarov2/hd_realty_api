@@ -94,6 +94,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
     list_display = (
         "title",
         "is_hot",
+        "price_usd",
         "price",
         "currency",
         "status",
@@ -114,7 +115,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
     )
     search_fields = ("title", "address")
     inlines = [AdvertisementImageInline, AdvertisementCharacteristicInline]
-    readonly_fields = ("views_count", "created_at", "updated_at")
+    readonly_fields = ("views_count", "created_at", "updated_at", "price", "currency")
 
     @display(description="Создано", ordering="created_at")
     def created_at_column(self, obj):
@@ -145,6 +146,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     "finishing_type",
                     "is_furnished",
                     "has_commission",
+                    "price_usd",
                     "price",
                     "currency",
                     "deal_type",
@@ -155,6 +157,10 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     "district",
                     "latitude",
                     "longitude",
+                ),
+                "description": (
+                    "Цена указывается в USD. При сохранении автоматически пересчитывается "
+                    "в сумы по последнему курсу ЦБ Узбекистана."
                 ),
             },
         ),
@@ -191,6 +197,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                             "description_uz",
                             "cover_image",
                             "video",
+                            "price_usd",
                             "price",
                             "currency",
                             "deal_type",
@@ -274,6 +281,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                         "street_intersection_uz",
                         "cover_image",
                         "video",
+                        "price_usd",
                         "price",
                         "currency",
                         "deal_type",
@@ -406,7 +414,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
         return exclude
 
     def get_readonly_fields(self, request, obj=None):
-        fields = ["views_count"]
+        fields = ["views_count", "price", "currency"]
         if obj:
             fields.extend(["created_at", "updated_at"])
         if is_realtor(request.user) and not request.user.is_superuser:
@@ -431,8 +439,7 @@ class AdvertisementAdmin(ModelAdmin, TranslationAdmin):
                     "total_floors",
                     "year_built",
                     "renovation_type",
-                    "price",
-                    "currency",
+                    "price_usd",
                     "deal_type",
                     "housing_market",
                     "category",

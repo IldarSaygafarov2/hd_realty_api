@@ -19,6 +19,8 @@ INSTALLED_APPS = [
     "unfold",
     "unfold.contrib.filters",
     "unfold.contrib.forms",
+    "unfold.contrib.constance",
+    "constance",
     "project.infrastructure.apps.InfrastructureConfig",
     "project.apps.categories.apps.CategoriesConfig",
     "project.apps.districts.apps.DistrictsConfig",
@@ -137,4 +139,25 @@ UNFOLD = {
     "SCRIPTS": [
         lambda request: static("users/js/notifications-poller.js"),
     ],
+}
+
+# django-constance: динамические параметры в БД
+from decimal import Decimal as _Decimal  # noqa: E402
+
+CONSTANCE_BACKEND = "constance.backends.database.DatabaseBackend"
+CONSTANCE_ADDITIONAL_FIELDS = {
+    "decimal_rate": [
+        "django.forms.DecimalField",
+        {"max_digits": 14, "decimal_places": 4},
+    ],
+}
+CONSTANCE_CONFIG = {
+    "USD_RATE": (
+        _Decimal("12000.0000"),
+        "Курс 1 USD к UZS. Обновляется автоматически с cbu.uz каждый день в 09:00.",
+        "decimal_rate",
+    ),
+}
+CONSTANCE_CONFIG_FIELDSETS = {
+    "Курс валют": ("USD_RATE",),
 }

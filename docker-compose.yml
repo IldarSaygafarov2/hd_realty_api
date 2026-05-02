@@ -52,5 +52,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # Планировщик: ежедневно в 09:00 (Asia/Tashkent) обновляет курс USD c cbu.uz
+  # и пересчитывает цены объявлений.
+  scheduler:
+    build: .
+    environment:
+      - PYTHONPATH=/app
+    command: >
+      sh -c "sleep 15 &&
+             python manage.py run_scheduler"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      web:
+        condition: service_started
+
 volumes:
   postgres_data:
