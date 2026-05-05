@@ -5,7 +5,7 @@
 Цена задаётся в USD (`price_usd`); цена в UZS (`price`) автоматически
 пересчитывается в `Advertisement.save()` по текущему курсу из constance.
 
-Slug формируется как у модели: категория-район-цена_uzs-комнаты-UZS.
+Slug формируется как у модели: категория-район-price_usd-комнаты-usd.
 Запуск: python manage.py fill_ads
 Перед запуском выполните: python manage.py fill_districts_categories
 """
@@ -19,7 +19,6 @@ from project.apps.advertisements.models import (
     RenovationType,
     _advertisement_slug_base,
 )
-from project.apps.advertisements.services.currency import get_current_usd_rate
 from project.apps.categories.models import Category
 from project.apps.districts.models import District
 
@@ -267,9 +266,6 @@ class Command(BaseCommand):
             deleted, _ = Advertisement.objects.all().delete()
             self.stdout.write(f"Удалено объявлений: {deleted}")
 
-        # Курс USD/UZS: из constance, при отсутствии — fallback.
-        usd_rate = get_current_usd_rate() or Decimal("12000")
-
         created = 0
         for i, row in enumerate(ADS_DATA):
             title_ru, title_uz, is_hot, num_rooms, deal_type, housing_market = row
@@ -277,14 +273,13 @@ class Command(BaseCommand):
             dist = districts[i % len(districts)]
             # Цена задаётся в USD; UZS-эквивалент пересчитает Advertisement.save().
             price_usd = Decimal(30_000 + i * 10_000)
-            price_uzs = (price_usd * usd_rate).quantize(Decimal("1"))
             area_total = Decimal(50 + i * 10)
             slug = _allocate_unique_slug(
                 category=cat,
                 district=dist,
-                price=price_uzs,
+                price=price_usd,
                 num_rooms=num_rooms,
-                currency=Advertisement.Currency.UZS,
+                currency=Advertisement.Currency.USD.value,
             )
             defaults = {
                 "title": title_ru,

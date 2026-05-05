@@ -113,7 +113,10 @@ class Advertisement(TimeStampedModel):
         unique=True,
         db_index=True,
         blank=True,
-        help_text="Пусто при создании — из категории, района, цены, комнат и валюты.",
+        help_text=(
+            "Пусто при создании — из категории, района, цены в USD (`price_usd`), "
+            "комнат и «usd» в конце; если `price_usd` не задан — из `price` и `currency`."
+        ),
     )
     description = models.TextField("Описание", blank=True)
     status = models.PositiveSmallIntegerField(
@@ -282,8 +285,14 @@ class Advertisement(TimeStampedModel):
             return f"ad-{get_random_string(12)}"
         cat_slug = self.category.slug
         dist_slug = self.district.slug
+        if self.price_usd is not None:
+            slug_price = Decimal(self.price_usd)
+            slug_currency = self.Currency.USD.value
+        else:
+            slug_price = self.price
+            slug_currency = self.currency
         base = _advertisement_slug_base(
-            cat_slug, dist_slug, self.price, self.num_rooms, self.currency
+            cat_slug, dist_slug, slug_price, self.num_rooms, slug_currency
         )
         candidate = base
         n = 0
