@@ -14,10 +14,46 @@ def _advertisement_slug_base(
     num_rooms: int,
     currency: str,
 ) -> str:
-    """Составная часть slug: категория + район + цена + комнаты + валюта (уникальность по валюте)."""
+    """База slug: тип недвижимости (slug категории) + район + цена + комнаты + валюта (usd/uzs)."""
     price_int = int(price)
     curr = (currency or "USD").lower()
     return f"{category_slug}-{district_slug}-{price_int}-{num_rooms}-{curr}"
+
+
+def allocate_unique_advertisement_slug(
+    *,
+    category_slug: str,
+    district_slug: str,
+    price_usd: Decimal | None,
+    price: Decimal,
+    currency: str,
+    num_rooms: int,
+    exclude_advertisement_pk: int | None = None,
+) -> str:
+    """Уникальный slug по той же схеме, что у `Advertisement._generate_unique_slug`.
+
+    Цена в slug берётся из `price_usd` (в USD), если оно задано; иначе — из `price` и `currency`.
+    """
+    if price_usd is not None:
+        slug_price = Decimal(price_usd)
+        slug_currency = Advertisement.Currency.USD.value
+    else:
+        slug_price = price
+        slug_currency = currency or Advertisement.Currency.UZS.value
+    base = _advertisement_slug_base(
+        category_slug, district_slug, slug_price, num_rooms, slug_currency
+    )
+    candidate = base
+    n = 0
+    qs = Advertisement.objects.all()
+    if exclude_advertisement_pk is not None:
+        qs = qs.exclude(pk=exclude_advertisement_pk)
+    while qs.filter(slug=candidate).exists():
+        n += 1
+        suffix = f"-{n}"
+        max_len = 255 - len(suffix)
+        candidate = (base[:max_len] if len(base) > max_len else base) + suffix
+    return candidate[:255]
 
 
 class RenovationType(TimeStampedModel):
@@ -283,28 +319,15 @@ class Advertisement(TimeStampedModel):
             from django.utils.crypto import get_random_string
 
             return f"ad-{get_random_string(12)}"
-        cat_slug = self.category.slug
-        dist_slug = self.district.slug
-        if self.price_usd is not None:
-            slug_price = Decimal(self.price_usd)
-            slug_currency = self.Currency.USD.value
-        else:
-            slug_price = self.price
-            slug_currency = self.currency
-        base = _advertisement_slug_base(
-            cat_slug, dist_slug, slug_price, self.num_rooms, slug_currency
+        return allocate_unique_advertisement_slug(
+            category_slug=self.category.slug,
+            district_slug=self.district.slug,
+            price_usd=self.price_usd,
+            price=self.price,
+            currency=self.currency,
+            num_rooms=self.num_rooms,
+            exclude_advertisement_pk=self.pk if self.pk else None,
         )
-        candidate = base
-        n = 0
-        qs = Advertisement.objects.all()
-        if self.pk:
-            qs = qs.exclude(pk=self.pk)
-        while qs.filter(slug=candidate).exists():
-            n += 1
-            suffix = f"-{n}"
-            max_len = 255 - len(suffix)
-            candidate = (base[:max_len] if len(base) > max_len else base) + suffix
-        return candidate[:255]
 
     def recalculate_price_from_usd(self) -> bool:
         """Пересчитать `price` (UZS) из `price_usd` по текущему курсу USD.

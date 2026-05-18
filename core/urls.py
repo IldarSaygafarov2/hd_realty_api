@@ -12,6 +12,8 @@ from project.api.categories.router import router as categories_router
 from project.api.consultations.router import router as consultations_router
 from project.api.districts.router import router as districts_router
 from project.api.portfolio.router import router as portfolio_router
+from django.conf.urls.static import static
+from django.conf import settings
 
 api = NinjaAPI(title="HD Realty API", version="1.0.0")
 api.add_router("/", common_router)
@@ -37,3 +39,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     prefix_default_language=True,
 )
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
