@@ -3,6 +3,7 @@ from decimal import Decimal
 from ninja import Router, Query
 
 from project.apps.advertisements.models import Advertisement, RenovationType
+from project.utils.media import media_file_path
 from project.apps.advertisements.schemas import (
     AdvertisementCategoryNestedSchema,
     AdvertisementCharacteristicSchema,
@@ -50,14 +51,9 @@ def _public_queryset(select_creator: bool = True):
     return qs
 
 
-def _build_media_url(request, field) -> str | None:
-    """Собрать полный URL для медиа-файла."""
-    if not field:
-        return None
-    url = field.url
-    if request and hasattr(request, "build_absolute_uri"):
-        return request.build_absolute_uri(url)
-    return url
+def _build_media_url(_request, field) -> str | None:
+    """Путь к медиа-файлу без домена и протокола (`/media/...`)."""
+    return media_file_path(field)
 
 
 def _to_creator_schema(user) -> AdvertisementCreatorSchema | None:

@@ -1,6 +1,7 @@
 from ninja import Router
 
 from project.apps.portfolio.models import PortfolioItem
+from project.utils.media import media_file_path
 from project.apps.portfolio.schemas import (
     PortfolioCompletedWorkSchema,
     PortfolioItemDetailSchema,
@@ -10,13 +11,9 @@ from project.apps.portfolio.schemas import (
 router = Router(tags=["portfolio"])
 
 
-def _build_media_url(request, field) -> str | None:
-    if not field:
-        return None
-    url = field.url
-    if request and hasattr(request, "build_absolute_uri"):
-        return request.build_absolute_uri(url)
-    return url
+def _build_media_url(_request, field) -> str | None:
+    """Путь к медиа-файлу без домена и протокола (`/media/...`)."""
+    return media_file_path(field)
 
 
 def _to_completed_works(item: PortfolioItem) -> list[PortfolioCompletedWorkSchema]:
