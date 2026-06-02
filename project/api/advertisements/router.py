@@ -335,18 +335,13 @@ def list_advertisements(
 )
 def list_advertisements_coordinates(request):
     """Координаты всех объявлений из БД списком словарей."""
-    qs = (
-        Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
-        .only("id", "slug", "title", "latitude", "longitude")
-        .order_by("id")
-    )
+    qs = Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
     return [
         AdvertisementCoordinatesSchema(
             id=ad.id,
-            slug=ad.slug,
-            title=ad.title,
             latitude=ad.latitude,
             longitude=ad.longitude,
+            info=_to_list_schema(request, ad),
         )
         for ad in qs
     ]

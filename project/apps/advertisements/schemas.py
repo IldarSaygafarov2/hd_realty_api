@@ -151,7 +151,6 @@ class AdvertisementCoordinatesSchema(Schema):
     """Координаты объявления для карты."""
 
     id: int
-    slug: str
-    title: str
     latitude: Decimal
     longitude: Decimal
+    info: AdvertisementListSchema
