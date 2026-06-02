@@ -7,6 +7,7 @@ from project.utils.media import media_file_path
 from project.apps.advertisements.schemas import (
     AdvertisementCategoryNestedSchema,
     AdvertisementCharacteristicSchema,
+    AdvertisementCoordinatesSchema,
     AdvertisementCreatorSchema,
     AdvertisementDetailSchema,
     AdvertisementDistrictNestedSchema,
@@ -326,6 +327,29 @@ def list_advertisements(
         limit=limit,
         offset=offset,
     )
+
+
+@router.get(
+    "/advertisements/coordinates",
+    response=list[AdvertisementCoordinatesSchema],
+)
+def list_advertisements_coordinates(request):
+    """Координаты всех объявлений из БД списком словарей."""
+    qs = (
+        Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
+        .only("id", "slug", "title", "latitude", "longitude")
+        .order_by("id")
+    )
+    return [
+        AdvertisementCoordinatesSchema(
+            id=ad.id,
+            slug=ad.slug,
+            title=ad.title,
+            latitude=ad.latitude,
+            longitude=ad.longitude,
+        )
+        for ad in qs
+    ]
 
 
 @router.get(

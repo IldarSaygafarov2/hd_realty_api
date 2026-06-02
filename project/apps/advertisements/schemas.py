@@ -145,3 +145,13 @@ class AdvertisementDetailSchema(Schema):
     creator: AdvertisementCreatorSchema | None = None
     views_count: int
     created_at: str
+
+
+class AdvertisementCoordinatesSchema(Schema):
+    """Координаты объявления для карты."""
+
+    id: int
+    slug: str
+    title: str
+    latitude: Decimal
+    longitude: Decimal

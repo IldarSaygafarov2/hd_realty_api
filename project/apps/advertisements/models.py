@@ -348,8 +348,39 @@ class Advertisement(TimeStampedModel):
         self.currency = self.Currency.UZS
         return changed
 
+    def update_coordinates_from_address(self) -> bool:
+        """Заполнить latitude/longitude по адресу через geopy (с задержкой 1 сек)."""
+        address = (self.address or "").strip()
+        if not address:
+            return False
+        from project.apps.advertisements.services.geocoding import geocode_address
+
+        coords = geocode_address(address)
+        if not coords:
+            return False
+        lat, lon = coords
+        changed = self.latitude != lat or self.longitude != lon
+        if changed:
+            self.latitude = lat
+            self.longitude = lon
+        return changed
+
     def save(self, *args, **kwargs):
+        should_geocode = False
+        if self._state.adding:
+            should_geocode = bool((self.address or "").strip())
+        elif self.pk:
+            previous = (
+                Advertisement.objects.filter(pk=self.pk)
+                .only("address")
+                .values_list("address", flat=True)
+                .first()
+            )
+            should_geocode = (previous or "").strip() != (self.address or "").strip()
+
         self.recalculate_price_from_usd()
+        if should_geocode:
+            self.update_coordinates_from_address()
         if self._state.adding and not (self.slug and str(self.slug).strip()):
             self.slug = self._generate_unique_slug()
         super().save(*args, **kwargs)
