@@ -142,6 +142,8 @@ def _to_list_schema(request, ad: Advertisement) -> AdvertisementListSchema:
         has_commission=ad.has_commission,
         address=ad.address or "",
         landmark=ad.landmark or "",
+        latitude=ad.latitude,
+        longitude=ad.longitude,
         street_intersection=ad.street_intersection or "",
         category=AdvertisementCategoryNestedSchema(
             id=cat.id,
@@ -329,22 +331,22 @@ def list_advertisements(
     )
 
 
-@router.get(
-    "/advertisements/coordinates",
-    response=list[AdvertisementCoordinatesSchema],
-)
-def list_advertisements_coordinates(request):
-    """Координаты всех объявлений из БД списком словарей."""
-    qs = Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
-    return [
-        AdvertisementCoordinatesSchema(
-            id=ad.id,
-            latitude=ad.latitude,
-            longitude=ad.longitude,
-            info=_to_list_schema(request, ad),
-        )
-        for ad in qs
-    ]
+# @router.get(
+#     "/advertisements/coordinates",
+#     response=list[AdvertisementCoordinatesSchema],
+# )
+# def list_advertisements_coordinates(request):
+#     """Координаты всех объявлений из БД списком словарей."""
+#     qs = Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
+#     return [
+#         AdvertisementCoordinatesSchema(
+#             id=ad.id,
+#             latitude=ad.latitude,
+#             longitude=ad.longitude,
+#             info=_to_list_schema(request, ad),
+#         )
+#         for ad in qs
+#     ]
 
 
 @router.get(

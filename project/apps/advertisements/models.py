@@ -379,8 +379,8 @@ class Advertisement(TimeStampedModel):
             should_geocode = (previous or "").strip() != (self.address or "").strip()
 
         self.recalculate_price_from_usd()
-        if should_geocode:
-            self.update_coordinates_from_address()
+        # if should_geocode:
+        self.update_coordinates_from_address()
         if self._state.adding and not (self.slug and str(self.slug).strip()):
             self.slug = self._generate_unique_slug()
         super().save(*args, **kwargs)

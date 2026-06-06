@@ -17,7 +17,7 @@ BASE_URL = "https://vitrina-admin.uz/api/v1"
 OPERATION_TYPES = ("BUY", "RENT")
 DEFAULT_PAGE_SIZE = 15
 # Импорт fill_ads: ровно столько объявлений на тип сделки (всего 20).
-ADS_PER_DEAL_TYPE = 30
+ADS_PER_DEAL_TYPE = 10
 
 # slug API -> slug в нашей БД (fill_districts_categories)
 DISTRICT_SLUG_ALIASES: dict[str, str] = {

@@ -77,6 +77,8 @@ class AdvertisementListSchema(Schema):
     address: str
     landmark: str
     street_intersection: str
+    latitude: Decimal | None
+    longitude: Decimal | None
     category: AdvertisementCategoryNestedSchema
     district: AdvertisementDistrictNestedSchema
     is_hot: bool
