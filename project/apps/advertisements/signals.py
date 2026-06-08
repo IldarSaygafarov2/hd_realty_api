@@ -4,6 +4,7 @@
 Слушаем изменение значения `USD_RATE` в django-constance (через админ-панель)
 и пересчитываем `price` (UZS) у всех объявлений из их `price_usd`.
 """
+
 from __future__ import annotations
 
 import logging
@@ -38,6 +39,8 @@ def recalculate_ads_on_usd_rate_change(sender, key, old_value, new_value, **kwar
                 updated,
             )
         except Exception:
-            logger.exception("Не удалось пересчитать цены объявлений после смены USD_RATE")
+            logger.exception(
+                "Не удалось пересчитать цены объявлений после смены USD_RATE"
+            )
 
     transaction.on_commit(_run)

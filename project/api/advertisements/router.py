@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from ninja import Router, Query
+from django.db.models import Q
 
 from project.apps.advertisements.models import Advertisement, RenovationType
 from project.utils.media import media_file_path
@@ -268,12 +269,13 @@ def _apply_list_filters(
 
 @router.get(
     "/advertisements",
-    response=PaginatedAdvertisementsSchema,
+    response=PaginatedAdvertisementsSchema | list[AdvertisementListSchema],
 )
 def list_advertisements(
     request,
-    limit: int = Query(20, ge=1, le=100, description="Количество на странице"),
+    limit: int = Query(5, ge=1, le=100, description="Количество на странице"),
     offset: int = Query(0, ge=0, description="Смещение"),
+    all: bool | None = Query(None, description="Показать все объявления?"),
     is_hot: bool | None = Query(
         None, description="Только горячие объявления (is_hot=True)"
     ),
@@ -323,6 +325,8 @@ def list_advertisements(
     )
     total = qs.count()
     items = qs[offset : offset + limit]
+    if all:
+        return [_to_list_schema(request, ad) for ad in qs]
     return PaginatedAdvertisementsSchema(
         items=[_to_list_schema(request, ad) for ad in items],
         total=total,
@@ -331,22 +335,66 @@ def list_advertisements(
     )
 
 
-# @router.get(
-#     "/advertisements/coordinates",
-#     response=list[AdvertisementCoordinatesSchema],
-# )
-# def list_advertisements_coordinates(request):
-#     """Координаты всех объявлений из БД списком словарей."""
-#     qs = Advertisement.objects.filter(latitude__isnull=False, longitude__isnull=False)
-#     return [
-#         AdvertisementCoordinatesSchema(
-#             id=ad.id,
-#             latitude=ad.latitude,
-#             longitude=ad.longitude,
-#             info=_to_list_schema(request, ad),
-#         )
-#         for ad in qs
-#     ]
+@router.get(
+    "/advertisements/search",
+    response=PaginatedAdvertisementsSchema | list[AdvertisementListSchema],
+)
+def search_advertisements(
+    request,
+    q: str = Query(
+        ...,
+        description=(
+            "Поисковый запрос: будет сопоставляться с id, названию категории, "
+            "названию района, описанию, названию типа ремонта и типу сделки"
+        ),
+    ),
+    limit: int = Query(5, ge=1, le=100, description="Количество на странице"),
+    offset: int = Query(0, ge=0, description="Смещение"),
+    all: bool | None = Query(None, description="Показать все объявления?"),
+):
+    """
+    Поиск объявлений по любому из полей: id, category, district,
+    description, renovation_type, deal_type.
+    """
+    qs = _public_queryset().prefetch_related("images").order_by("-created_at")
+    s = (q or "").strip()
+    if not s:
+        return PaginatedAdvertisementsSchema(
+            items=[], total=0, limit=limit, offset=offset
+        )
+
+    dt_values = {c[0] for c in Advertisement.DealType.choices}
+    filters = Q()
+    # Числовые совпадения по id
+    if s.isdigit():
+        num = int(s)
+        filters |= (
+            Q(id=num)
+            | Q(category__id=num)
+            | Q(district__id=num)
+            | Q(renovation_type__id=num)
+        )
+    # Текстовые совпадения по названию объявления, названиям категории, района, типа ремонта и описанию
+    filters |= Q(title__icontains=s)
+    filters |= Q(category__name__icontains=s)
+    filters |= Q(district__name__icontains=s)
+    filters |= Q(renovation_type__name__icontains=s)
+    filters |= Q(description__icontains=s)
+    # Тип сделки точным совпадением (если передано корректное значение)
+    if s.lower() in dt_values:
+        filters |= Q(deal_type=s.lower())
+
+    qs = qs.filter(filters).distinct()
+    total = qs.count()
+    items = qs[offset : offset + limit]
+    if all:
+        return [_to_list_schema(request, ad) for ad in qs]
+    return PaginatedAdvertisementsSchema(
+        items=[_to_list_schema(request, ad) for ad in items],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get(
