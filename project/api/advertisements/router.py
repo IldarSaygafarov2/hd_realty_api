@@ -273,7 +273,7 @@ def _apply_list_filters(
 )
 def list_advertisements(
     request,
-    limit: int = Query(5, ge=1, le=100, description="Количество на странице"),
+    limit: int = Query(5, ge=0, le=100, description="Количество на странице"),
     offset: int = Query(0, ge=0, description="Смещение"),
     all: bool | None = Query(None, description="Показать все объявления?"),
     is_hot: bool | None = Query(
@@ -324,6 +324,13 @@ def list_advertisements(
         price_max=price_max,
     )
     total = qs.count()
+    if limit == 0:
+        return PaginatedAdvertisementsSchema(
+            items=[_to_list_schema(request, ad) for ad in qs],
+            total=total,
+            limit=limit,
+            offset=offset,
+        )
     items = qs[offset : offset + limit]
     if all:
         return [_to_list_schema(request, ad) for ad in qs]
