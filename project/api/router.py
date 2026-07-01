@@ -1,6 +1,3 @@
-"""
-API routers - подключайте сюда роутеры для модулей.
-"""
 from ninja import Router
 
 router = Router(tags=["common"])

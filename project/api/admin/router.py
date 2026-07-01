@@ -1,6 +1,7 @@
 """
 API для админ-панели (session auth).
 """
+
 from ninja import Router
 
 from project.apps.users.models import Notification
@@ -21,9 +22,9 @@ def get_unread_notifications(request):
         return 401, {"detail": "Authentication required"}
     qs = Notification.objects.filter(user=request.user, is_read=False)
     count = qs.count()
-    notifications = list(qs.order_by("-created_at")[:20].values(
-        "id", "title", "message", "created_at"
-    ))
+    notifications = list(
+        qs.order_by("-created_at")[:20].values("id", "title", "message", "created_at")
+    )
     items = [
         {
             **n,
