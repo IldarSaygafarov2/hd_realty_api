@@ -17,8 +17,9 @@ services:
             #  python manage.py fill_ads &&
              python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 core.wsgi:application"
-    expose:
-      - "8000"
+    # Published on localhost so host-level nginx can proxy to it.
+    ports:
+      - "${WEB_PORT:-8000}:8000"
     env_file:
       - .env
     depends_on:

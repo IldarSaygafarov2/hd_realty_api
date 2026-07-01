@@ -1,4 +1,4 @@
-# Деплой на VPS (Docker, nginx в контейнере)
+# Деплой на VPS (Docker Compose + nginx на сервере)
 
 ## 1. Подготовка
 
@@ -16,8 +16,8 @@ nano .env  # SECRET_KEY, ALLOWED_HOSTS, DB_PASSWORD
 ```
 
 **Если на сервере уже запущен другой проект (nginx на 80):**
-- `NGINX_HTTP_PORT=8080` — приложение будет на порту 8080
 - `COMPOSE_PROJECT_NAME=hd_realty` — уникальное имя проекта
+- `WEB_PORT=8000` — порт, на котором Docker Compose откроет приложение для проксирования nginx
 
 **CSRF и CORS (API Django)** — в `.env` указать домены:
 - `CSRF_TRUSTED_ORIGINS=https://ваш-домен.com,http://IP:8080`
@@ -32,7 +32,7 @@ docker compose -f docker-compose.production.yml build
 docker compose -f docker-compose.production.yml up -d
 ```
 
-Приложение: `http://IP_сервера:8080` (или порт из NGINX_HTTP_PORT). В ALLOWED_HOSTS добавить IP и домен.
+Приложение будет доступно локально на `http://127.0.0.1:8000` (или порт из `WEB_PORT`), а nginx на сервере будет проксировать внешний трафик на него. В `ALLOWED_HOSTS` добавьте IP и домен.
 
 ## 4. Администратор
 

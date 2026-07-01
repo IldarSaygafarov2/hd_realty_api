@@ -1,7 +1,8 @@
-# Пример конфигурации Nginx на VPS.
+# Пример конфигурации Nginx на VPS для проксирования к Docker Compose.
 # Разместить в /etc/nginx/sites-available/hd_realty и сделать symlink в sites-enabled.
 
 upstream hd_realty {
+    # Docker Compose exposes the app on localhost:8000 for host nginx.
     server 127.0.0.1:8000;
 }
 
