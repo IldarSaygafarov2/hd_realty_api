@@ -26,8 +26,8 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - staticfiles:/app/staticfiles
-      - media:/app/media
+      - /root/projects/hd_realty_api/staticfiles:/app/staticfiles
+      - /root/projects/hd_realty_api/media:/app/media
 
   # nginx:
   #   image: nginx:alpine
