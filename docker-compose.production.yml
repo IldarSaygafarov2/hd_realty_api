@@ -26,8 +26,9 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - /root/projects/hd_realty_api/staticfiles:/app/staticfiles
-      - /root/projects/hd_realty_api/media:/app/media
+      # Use a path outside /root so nginx can read static/media files.
+      - /var/www/hd_realty/staticfiles:/app/staticfiles
+      - /var/www/hd_realty/media:/app/media
 
   # nginx:
   #   image: nginx:alpine

@@ -13,12 +13,12 @@ server {
     client_max_body_size 20M;
 
     location /static/ {
-        alias /opt/hd_realty/staticfiles/;
+        alias /var/www/hd_realty/staticfiles/;
     }
 
     # SPA с другого origin: CORS только здесь — Django не участвует в раздаче /media/.
     location /media/ {
-        alias /opt/hd_realty/media/;
+        alias /var/www/hd_realty/media/;
 
         if ($request_method = OPTIONS) {
             add_header Access-Control-Allow-Origin * always;
