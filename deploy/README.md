@@ -39,4 +39,3 @@ docker compose -f docker-compose.production.yml up -d
 ```bash
 docker compose -f docker-compose.production.yml exec web python manage.py createsuperuser
 ```
-о
