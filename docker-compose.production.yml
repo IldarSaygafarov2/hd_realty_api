@@ -11,10 +11,10 @@ services:
       - DJANGO_SETTINGS_MODULE=core.settings.production
     command: >
       sh -c "python manage.py migrate --noinput &&
-            #  python manage.py update_translation_fields 2>/dev/null || true &&
-            #  python manage.py fill_districts_categories &&
-            #  python manage.py fill_renovation_types &&
-            #  python manage.py fill_ads &&
+             python manage.py update_translation_fields 2>/dev/null || true &&
+             python manage.py fill_districts_categories &&
+             python manage.py fill_renovation_types &&
+             python manage.py fill_ads &&
              python manage.py collectstatic --noinput &&
              gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 core.wsgi:application"
     # Published on localhost so host-level nginx can proxy to it.
