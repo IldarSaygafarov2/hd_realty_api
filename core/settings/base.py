@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "unfold.contrib.forms",
     "unfold.contrib.constance",
     "constance",
+    "storages",
     "project.infrastructure.apps.InfrastructureConfig",
     "project.apps.categories.apps.CategoriesConfig",
     "project.apps.districts.apps.DistrictsConfig",
@@ -160,4 +161,23 @@ CONSTANCE_CONFIG = {
 }
 CONSTANCE_CONFIG_FIELDSETS = {
     "Курс валют": ("USD_RATE",),
+}
+
+
+AWS_STORAGE_BUCKET_NAME = env.str("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_REGION_NAME = env.str("AWS_S3_REGION_NAME")
+AWS_ACCESS_KEY_ID = env.str("S3_ACCESS_KEY")
+AWS_SECRET_ACCESS_KEY = env.str("S3_SECRET_KEY")
+AWS_S3_ADDRESSING_STYLE = "virtual"
+AWS_S3_REGION_NAME = "uz-2"
+AWS_S3_ENDPOINT_URL = env.str("AWS_S3_ENDPOINT_URL")
+
+
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
 }
