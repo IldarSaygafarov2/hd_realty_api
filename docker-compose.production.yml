@@ -16,7 +16,9 @@ services:
              python manage.py fill_renovation_types &&
              python manage.py fill_ads &&
              python manage.py collectstatic --noinput &&
-             gunicorn --bind 0.0.0.0:8000 --workers 3 --threads 2 core.wsgi:application"
+             gunicorn -c gunicorn.conf.py core.wsgi:application
+            "
+
     # Published on localhost so host-level nginx can proxy to it.
     ports:
       - "${WEB_PORT:-8000}:8000"

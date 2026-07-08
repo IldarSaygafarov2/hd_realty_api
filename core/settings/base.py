@@ -178,6 +178,10 @@ AWS_DEFAULT_ACL = "public-read"
 STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            # "querystring_auth": False,
+            # "default_acl": "public-read",  # Использовать стро
+        },
     },
     "staticfiles": {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
